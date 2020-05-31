@@ -8,3 +8,4 @@ package ifneeded de1_creatormain 1.0 [list source [file join "./" creatormain.tc
 package ifneeded de1_machine 1.0 [list source [file join "./" machine.tcl]]
 package ifneeded de1_misc 1.0 [list source [file join "./" misc.tcl]]
 package ifneeded de1_updater 1.0 [list source [file join "./" updater.tcl]]
+package ifneeded de1_webapi 1.0 [list source [file join "./webapi" webapi.tcl]]

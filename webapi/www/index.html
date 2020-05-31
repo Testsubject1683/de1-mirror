@@ -1,0 +1,182 @@
+<html>
+
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.bundle.min.js"
+    integrity="sha256-TQq84xX6vkwR0Qs1qH5ADkP+MvH0W+9E7TdHJsoIQiM=" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.bundle.js"
+    integrity="sha256-8zyeSXm+yTvzUN1VgAOinFgaVFEFTyYzWShOy9w7WoQ=" crossorigin="anonymous"></script>
+  <script>
+
+    var address = location.origin;
+    //var address = "http://127.0.0.1:1337";
+    //var address = "http://10.0.0.1:1337";
+    window.addEventListener("load", onLoad);
+
+
+    function onLoad() {
+      updateTimer();
+      loadShots();
+      initChart();
+    }
+
+    function changeState(newState) {
+      var oReq = new XMLHttpRequest();
+      oReq.open("GET", address + "/api/state/" + newState);
+      oReq.send();
+    }
+
+    var timer;
+    function updateTimer() {
+      if (document.getElementById("refresh").checked) {
+        timer = setInterval(getState, 5000);
+      } else {
+        clearInterval(timer);
+      }
+    }
+
+    function getState() {
+      var oReq = new XMLHttpRequest();
+      oReq.addEventListener("load", function (event) {
+        if (oReq.status >= 200 && oReq.status < 300) {
+          writeToScreen(oReq.responseText);
+        } else {
+          console.warn(oReq.statusText, oReq.responseText);
+        }
+      });
+      oReq.open("GET", address + "/api/status");
+      oReq.send();
+    }
+
+    function writeToScreen(message) {
+      var output = document.getElementById("output");
+      var pre = document.createElement("p");
+      pre.style.wordWrap = "break-word";
+      pre.innerHTML = message;
+
+      while (output.firstChild) {
+        output.firstChild.remove();
+      }
+      output.appendChild(pre);
+    }
+
+    function loadShots() {
+      fetch(address + "/api/history/").then(r => r.json())
+        .then(j => j.sort().reverse().map((e) => {
+          var x = document.getElementById("shots");
+          var option = document.createElement("option");
+          option.text = e;
+          x.add(option);
+        }));
+    }
+
+    function loadSelectedShot() {
+      let selected = document.getElementById("shots").value;
+      if (!selected) {
+        window.chart.data.datasets.forEach(ds => ds.data = null);
+        window.chart.update();
+      } else {
+        fetch(address + "/api/history/" + selected).then(r => r.text())
+          .then(t => {
+            var time = extractArray(t, "espresso_elapsed");
+            var pressure = extractArray(t, "espresso_pressure");
+            var time_pressure = new Array();
+            for (var i = 0; i < time.length; i++) {
+              time_pressure.push({ x: time[i], y: pressure[i] });
+            }
+
+            var flow = extractArray(t, "espresso_flow");
+            var time_flow = new Array();
+            for (var i = 0; i < time.length; i++) {
+              time_flow.push({ x: time[i], y: flow[i] });
+            }
+
+            var temperature = extractArray(t, "espresso_temperature_basket");
+            var time_temperature = new Array();
+            for (var i = 0; i < time.length; i++) {
+              time_temperature.push({ x: time[i], y: temperature[i] / 10 });
+            }
+
+            //update chart
+            window.chart.data.datasets.forEach(dataset => {
+              switch (dataset.label) {
+                case 'pressure':
+                  dataset.data = time_pressure;
+                  break;
+                case 'flow':
+                  dataset.data = time_flow;
+                  break;
+                case 'temperature':
+                  dataset.data = time_temperature;
+                  break;
+              }
+            });
+            window.chart.update();
+          });
+      }
+    }
+
+    function extractArray(shotfile, key) {
+      return shotfile.match(key + " \{(.+?)\}")[1].split(' ');
+    }
+
+    function initChart() {
+      var ctx = document.getElementById("myChart").getContext("2d");
+      var data = new Array
+      window.chart = new Chart(ctx, {
+        type: 'scatter',
+
+        // The data for our dataset
+        data: {
+          //labels: [1, 2, 4, 5, 6, 7, 8],
+          datasets: [{
+            showLine: true,
+            fill: false,
+            label: 'pressure',
+            borderColor: 'rgb(124,252,0)'
+            //data: pressure
+          }, {
+            showLine: true,
+            fill: false,
+            label: 'flow',
+            borderColor: 'rgb(0,191,255)'
+            //data: flow
+          }, {
+            showLine: true,
+            fill: false,
+            label: 'temperature',
+            borderColor: 'rgb(220,20,60)'
+            //data: temperature
+          }]
+        },
+
+        options: {
+          scales: {
+            xAxes: [{
+              type: 'linear',
+              position: 'bottom'
+            }]
+          }
+        }
+      });
+    }
+  </script>
+</head>
+
+<body>
+
+  <input type="button" onclick="changeState('start')" value="start" />
+  <input type="button" onclick="changeState('sleep')" value="sleep" />
+  <input type="button" onclick="getState()" value="get state" />
+  <input type="checkbox" id="refresh" onclick="updateTimer()" /> <label for="refresh">refresh</label>
+  <div id="output"></div>
+  <br />
+  <select id="shots" onchange="loadSelectedShot()">
+    <option />
+  </select>
+  <br />
+  <div style="max-width: 100%;">
+    <canvas id="myChart"></canvas>
+  </div>
+</body>
+
+</html>
