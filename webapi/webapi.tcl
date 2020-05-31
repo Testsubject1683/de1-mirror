@@ -1,4 +1,4 @@
-namespace eval decent_espresso::webapi::api {
+namespace eval decent_espresso::webapi {
   package provide de1_webapi 1.0
 
   package require uri
@@ -17,14 +17,15 @@ namespace eval decent_espresso::webapi::api {
       array set req $reqstring
       set list [list ]
       foreach {value} [split $req(path) "/"] {
-        lappend list [::url-decode $value]
+        lappend list [decent_espresso::webapi::url-decode $value]
       }
       set cmd [lindex $list 1]
       set proc_to_call "decent_espresso::webapi::api::${cmd} [lrange $list 2 end]"
-      if {[catch {eval $proc_to_call} result]} {
-        respond $sock 500 "$result" "Internal Server Error"
+      if {[catch {
+          respond $sock 200 [eval $proc_to_call]
+        } err] != 0} {
+        respond $sock 500 "$err" "Internal Server Error"
       }
-      respond $sock 200 $result
     }
     "*.html" {
       array set req $reqstring
@@ -54,52 +55,7 @@ namespace eval decent_espresso::webapi::api {
     
   }
 
-  proc compile_json {spec data} {
-      while [llength $spec] {
-          set type [lindex $spec 0]
-          set spec [lrange $spec 1 end]
-
-          switch -- $type {
-              dict {
-                  lappend spec * string
-
-                  set json {}
-                  foreach {key val} $data {
-                      foreach {keymatch valtype} $spec {
-                          if {[string match $keymatch $key]} {
-                              lappend json [subst {"$key":[
-                                  compile_json $valtype $val]}]
-                              break
-                          }
-                      }
-                  }
-                  return "{[join $json ,]}"
-              }
-              list {
-                  if {![llength $spec]} {
-                      set spec string
-                  } else {
-                      set spec [lindex $spec 0]
-                  }
-                  set json {}
-                  foreach {val} $data {
-                      lappend json [compile_json $spec $val]
-                  }
-                  return "\[[join $json ,]\]"
-              }
-              string {
-                  if {[string is double -strict $data]} {
-                      return $data
-                  } else {
-                      return "\"$data\""
-                  }
-              }
-              default {error "Invalid type"}
-          }
-      }
-  }
-
-  proc url-decode str {
+  proc url-decode {str} {
       # rewrite "+" back to space
       # protect \ from quoting another '\'
       set str [string map [list + { } "\\" "\\\\"] $str]
@@ -163,7 +119,7 @@ namespace eval decent_espresso::webapi::api {
       close $sock
     }
   }
-  return [socket -server ::httpd::accept $port]
+  return [socket -server decent_espresso::webapi::httpd::accept $port]
   }
 
   start_socket

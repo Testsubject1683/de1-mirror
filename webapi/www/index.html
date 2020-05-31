@@ -8,8 +8,6 @@
   <script>
 
     var address = location.origin;
-    //var address = "http://127.0.0.1:1337";
-    //var address = "http://10.0.0.1:1337";
     window.addEventListener("load", onLoad);
 
 
@@ -60,13 +58,17 @@
     }
 
     function loadShots() {
+      var x = document.getElementById("shots");
       fetch(address + "/api/history/").then(r => r.json())
         .then(j => j.sort().reverse().map((e) => {
-          var x = document.getElementById("shots");
           var option = document.createElement("option");
           option.text = e;
           x.add(option);
-        }));
+        })).then(e => {
+          x.options[1].selected = true;
+          x.onchange();
+        });
+
     }
 
     function loadSelectedShot() {
@@ -83,11 +85,24 @@
             for (var i = 0; i < time.length; i++) {
               time_pressure.push({ x: time[i], y: pressure[i] });
             }
+            var pressureGoal = extractArray(t, "espresso_pressure_goal");
+            var time_pressureGoal = new Array();
+            for (var i = 0; i < time.length; i++) {
+              let goal = pressureGoal[i];
+
+              time_pressureGoal.push({ x: time[i], y: goal >= 0 ? goal : NaN });
+            }
 
             var flow = extractArray(t, "espresso_flow");
             var time_flow = new Array();
             for (var i = 0; i < time.length; i++) {
               time_flow.push({ x: time[i], y: flow[i] });
+            }
+            var flowGoal = extractArray(t, "espresso_flow_goal");
+            var time_flowGoal = new Array();
+            for (var i = 0; i < time.length; i++) {
+              let goal = flowGoal[i];
+              time_flowGoal.push({ x: time[i], y: goal >= 0 ? goal : NaN });
             }
 
             var temperature = extractArray(t, "espresso_temperature_basket");
@@ -95,6 +110,15 @@
             for (var i = 0; i < time.length; i++) {
               time_temperature.push({ x: time[i], y: temperature[i] / 10 });
             }
+            var temperatureGoal = extractArray(t, "espresso_temperature_goal");
+            var time_temperatureGoal = new Array();
+            for (var i = 0; i < time.length; i++) {
+              time_temperatureGoal.push({ x: time[i], y: temperatureGoal[i] / 10 });
+            }
+
+            var profile = extractString(t, "profile");
+            var duration = time[time.length];
+
 
             //update chart
             window.chart.data.datasets.forEach(dataset => {
@@ -102,11 +126,20 @@
                 case 'pressure':
                   dataset.data = time_pressure;
                   break;
+                case 'pressure-goal':
+                  dataset.data = time_pressureGoal;
+                  break;
                 case 'flow':
                   dataset.data = time_flow;
                   break;
+                case 'flow-goal':
+                  dataset.data = time_flowGoal;
+                  break;
                 case 'temperature':
                   dataset.data = time_temperature;
+                  break;
+                case 'temperature-goal':
+                  dataset.data = time_temperatureGoal;
                   break;
               }
             });
@@ -116,12 +149,22 @@
     }
 
     function extractArray(shotfile, key) {
-      return shotfile.match(key + " \{(.+?)\}")[1].split(' ');
+      return extractString(shotfile, key).split(' ');
+    }
+
+    function extractString(shotfile, key) {
+      var match = shotfile.match(key + " \{(.+)\}");
+      if (match != null) {
+        return match[1];
+      } else {
+        return null;
+      }
     }
 
     function initChart() {
       var ctx = document.getElementById("myChart").getContext("2d");
-      var data = new Array
+      var borderDash = [10, 10];
+      var pointRadius = 2;
       window.chart = new Chart(ctx, {
         type: 'scatter',
 
@@ -132,24 +175,48 @@
             showLine: true,
             fill: false,
             label: 'pressure',
-            borderColor: 'rgb(124,252,0)'
-            //data: pressure
+            borderColor: 'rgb(124,252,0)',
+            pointRadius: pointRadius
+          }, {
+            showLine: true,
+            fill: false,
+            label: 'pressure-goal',
+            borderColor: 'rgb(124,252,0)',
+            borderDash: borderDash,
+            pointRadius: 0
           }, {
             showLine: true,
             fill: false,
             label: 'flow',
-            borderColor: 'rgb(0,191,255)'
-            //data: flow
+            borderColor: 'rgb(0,191,255)',
+            pointRadius: pointRadius
+          }, {
+            showLine: true,
+            fill: false,
+            label: 'flow-goal',
+            borderColor: 'rgb(0,191,255)',
+            borderDash: borderDash,
+            pointRadius: 0
           }, {
             showLine: true,
             fill: false,
             label: 'temperature',
-            borderColor: 'rgb(220,20,60)'
-            //data: temperature
+            borderColor: 'rgb(220,20,60)',
+            pointRadius: pointRadius
+          }, {
+            showLine: true,
+            fill: false,
+            label: 'temperature-goal',
+            borderColor: 'rgb(220,20,60)',
+            borderDash: borderDash,
+            pointRadius: 0
           }]
         },
 
         options: {
+          tooltips: {
+            mode: 'x',
+          },
           scales: {
             xAxes: [{
               type: 'linear',

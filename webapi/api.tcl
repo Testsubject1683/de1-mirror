@@ -1,4 +1,4 @@
-namespace eval decent_espresso::webapi::api {
+namespace eval api {
 
 	proc list_profiles { } {
 		return [compile_json {list} [profile_directories]]		
@@ -142,4 +142,49 @@ namespace eval decent_espresso::webapi::api {
 		append json_structure " * string"
 		return [compile_json $json_structure $return]
 	}
+
+	proc compile_json {spec data} {
+      while [llength $spec] {
+          set type [lindex $spec 0]
+          set spec [lrange $spec 1 end]
+
+          switch -- $type {
+              dict {
+                  lappend spec * string
+
+                  set json {}
+                  foreach {key val} $data {
+                      foreach {keymatch valtype} $spec {
+                          if {[string match $keymatch $key]} {
+                              lappend json [subst {"$key":[
+                                  compile_json $valtype $val]}]
+                              break
+                          }
+                      }
+                  }
+                  return "{[join $json ,]}"
+              }
+              list {
+                  if {![llength $spec]} {
+                      set spec string
+                  } else {
+                      set spec [lindex $spec 0]
+                  }
+                  set json {}
+                  foreach {val} $data {
+                      lappend json [compile_json $spec $val]
+                  }
+                  return "\[[join $json ,]\]"
+              }
+              string {
+                  if {[string is double -strict $data]} {
+                      return $data
+                  } else {
+                      return "\"$data\""
+                  }
+              }
+              default {error "Invalid type"}
+          }
+      }
+  }
 }
