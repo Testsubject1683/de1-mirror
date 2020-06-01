@@ -40,9 +40,10 @@ namespace eval api {
 			fconfigure $fd -translation binary
 			set content [read $fd]; close $fd
 			return $content
+		} else {
+			set shotlist [glob -tails -directory [pwd]/history/ *.shot]
+			return [compile_json "{list}" $shotlist]
 		}
-		set shotlist [glob -tails -directory [pwd]/history/ *.shot]
-		return [compile_json "{list}" $shotlist]
 	}
 	
 

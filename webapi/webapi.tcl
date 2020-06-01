@@ -5,6 +5,8 @@ namespace eval decent_espresso::webapi {
   package require base64
   package require html
 
+  package require websocket
+
 
   proc start_socket {} {
     source "./webapi/api.tcl"
@@ -51,6 +53,7 @@ namespace eval decent_espresso::webapi {
     }]
   }
 
+
   proc file {filePath} {
     
   }
@@ -82,6 +85,7 @@ namespace eval decent_espresso::webapi {
   foreach up $userpwds { namespace eval httpd [list lappend auths [base64::encode $up]] }
   namespace eval httpd {
     proc respond {sock code body {head "OK"}} {
+      if {$code != 200} { msg "Http error $code $head : $body" }
       puts -nonewline $sock "HTTP/1.0 $code $head\nContent-Type: text/html; charset=utf-8\nConnection: close\nAccess-Control-Allow-Origin: *\n\n$body"
     }
     proc checkauth {sock ip auth} {
@@ -110,15 +114,19 @@ namespace eval decent_espresso::webapi {
         if {[eof $sock]} { error "Connection closed from $ip" }
         foreach {method url version} $line { break }
         switch -exact $method {
-          GET { handler $sock $ip [uri::split $url] $auth }
+          GET {
+            set url [uri::split $url]
+            handler $sock $ip $url $auth
+            }
           default { error "Unsupported method '$method' from $ip" }
         }
       } msg]} {
-        write_file "logfile" "Error: $msg"
+        msg "Error on client connection $ip:$port: $msg"
       }
       close $sock
     }
   }
+  msg "starting http server on port $port"
   return [socket -server decent_espresso::webapi::httpd::accept $port]
   }
 
