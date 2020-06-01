@@ -8,7 +8,7 @@ namespace eval decent_espresso::webapi {
 
   proc start_socket {} {
     source "./webapi/api.tcl"
-    set port "1337"
+    set port "1683"
     set open_socket [HTTPD $port "" "" {} {AuthRealm} {
     "" {
       respond $sock 419 "I'm not a teapot..." "I'm a marvelous Espresso machine"
