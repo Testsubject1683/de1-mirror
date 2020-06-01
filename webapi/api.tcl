@@ -56,6 +56,7 @@ namespace eval api {
 						start_sleep
 					}
 				}
+				"wake" -
 				"start" {
 					if {$current_state != "Idle"} {
 						start_idle
