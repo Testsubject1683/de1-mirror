@@ -80,6 +80,7 @@ namespace eval api {
 		set return [dict create]
 		set json_structure {dict state string}
 		dict set return "state" $::de1_num_state($::de1(state))
+		dict set return "substate" $::de1_substate_types($::de1(substate))
 		switch -- $::de1_num_state($::de1(state)) {
 			"Idle" {
 				dict set return "profile" $::settings(original_profile_title)
