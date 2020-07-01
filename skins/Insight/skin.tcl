@@ -43,13 +43,16 @@ set_next_page "hotwaterrinse" "preheat_2"
 add_de1_page "sleep" "sleep.jpg" "default"
 add_de1_page "tankfilling" "filling_tank.jpg" "default"
 add_de1_page "tankempty refill" "fill_tank.jpg" "default"
-add_de1_page "message calibrate infopage tabletstyles languages measurements showprofiles" "settings_message.png" "default"
+add_de1_page "message calibrate infopage tabletstyles languages profile_notes measurements showprofiles" "settings_message.png" "default"
 add_de1_page "create_preset" "settings_3_choices.png" "default"
 add_de1_page "descalewarning" "descalewarning.jpg" "default"
 
 add_de1_page "cleaning" "cleaning.jpg" "default"
 add_de1_page "descaling" "descaling.jpg" "default"
 add_de1_page "descale_prepare" "descale_prepare.jpg" "default"
+add_de1_page "firmware_update_3" "firmware_upgrade.jpg" "default"
+add_de1_page "firmware_update_1 firmware_update_4" "firmware_upgrade_off.jpg" "default"
+add_de1_page "firmware_update_2 firmware_update_5" "firmware_upgrade_on.jpg" "default"
 
 add_de1_page "travel_prepare" "travel_prepare.jpg" "default"
 add_de1_page "travel_do" "travel_do.jpg" "default"
@@ -504,7 +507,8 @@ add_de1_button "off_zoomed_temperature espresso_zoomed_temperature espresso_3_zo
 } 1 1 2012 1600
 
 # the "go to sleep" button and the whole-screen button for coming back awake
-add_de1_button "saver descaling cleaning" {say [translate {awake}] $::settings(sound_button_in); set_next_page off off; start_idle; de1_send_waterlevel_settings; } 0 0 2560 1600
+add_de1_button "saver sleep descaling cleaning" {say [translate {awake}] $::settings(sound_button_in); set_next_page off off; page_show off; start_idle; de1_send_waterlevel_settings; } 0 0 2560 1600
+
 
 if {$::debugging == 1} {
 	#add_de1_button "off espresso_3 preheat_1 preheat_3 preheat_4 steam_1 steam_3 water_1 water_3 water_4 off_zoomed espresso_3_zoomed off_zoomed_temperature espresso_3_zoomed_temperature" {say [translate {sleep}] $::settings(sound_button_in); app_exit} 2014 1420 2284 1600
@@ -1126,3 +1130,5 @@ proc skins_page_change_due_to_de1_state_change { textstate } {
 
 #set_next_page off steam_zoom;
 ##
+
+#set_next_page off sleep;

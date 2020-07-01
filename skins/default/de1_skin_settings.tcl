@@ -440,7 +440,12 @@ add_de1_text "settings_3" 1304 750 -text [translate "Firmware"] -font Helv_10_bo
 	# firmware update
 	add_de1_variable "settings_3" 1960 906 -text "" -width [rescale_y_skin 1000] -font Helv_10_bold -fill "#FFFFFF" -justify "center" -anchor "center" -textvariable {[check_firmware_update_is_available][translate $::de1(firmware_update_button_label)]} 
 	add_de1_variable "settings_3" 1960 964 -font Helv_8 -fill "#FFFFFF" -anchor "center" -width 500 -justify "center" -textvariable {[firmware_uploaded_label]} 
-	add_de1_button "settings_3" {start_firmware_update} 1280 820 2540 1020
+	#add_de1_button "settings_3" {start_firmware_update} 1280 820 2540 1020
+	add_de1_button "settings_3" {set ::de1(in_fw_update_mode) 1; page_to_show_when_off firmware_update_1} 1280 850 2540 1020
+	
+	# hidden button to force a firmware update even if it is currently disabled.
+	add_de1_button "settings_3" {set ::settings(force_fw_update) 1; set ::de1(in_fw_update_mode) 1; page_to_show_when_off firmware_update_1} 1280 750 1800 810
+
 
 # app update
 add_de1_text "settings_4" 50 220 -text [translate "Update App"] -font Helv_10_bold -fill "#7f879a" -justify "left" -anchor "nw"
@@ -485,13 +490,62 @@ add_de1_text "settings_4" 50 220 -text [translate "Update App"] -font Helv_10_bo
 			# the new group head controller stops the stress test feature from working, since bluetooth starting of dangerous functions is no longer permitted for UL compliance
 		#}
 
+	add_de1_text "firmware_update_1" 40 20 -text [translate "Turn your DE1 off"] -font Helv_16_bold -width 1200 -fill "#444444" -anchor "nw" -justify "left" 
+		add_de1_text "firmware_update_1" 40 1500 -text "[translate "Firmware Update"] 1/5" -font Helv_12_bold -fill "#888888" -anchor "nw" -justify "left"
+		add_de1_text "firmware_update_1" 2290 1508 -text [translate "Cancel"] -font Helv_10_bold -fill "#DDDDDD" -anchor "center"
+		add_de1_button "firmware_update_1" {say [translate {Cancel}] $::settings(sound_button_in); set ::de1(in_fw_update_mode) 0; page_to_show_when_off settings_3;} 1960 1200 2560 1600 ""
+		add_de1_variable "firmware_update_1" 2030 300 -text "" -font Helv_16_bold -fill "#222222" -anchor "center" -width [rescale_y_skin 700] -justify "center" -textvariable {[if {$::de1(device_handle) == 0} { page_show firmware_update_2; }; return ""]}
 
+	add_de1_text "firmware_update_2" 40 20 -text [translate "Turn your DE1 on"] -font Helv_16_bold -width 1200 -fill "#444444" -anchor "nw" -justify "left" 
+		add_de1_text "firmware_update_2" 40 1500 -text "[translate "Firmware Update"] 2/5" -font Helv_12_bold -fill "#888888" -anchor "nw" -justify "left"
+		add_de1_text "firmware_update_2" 2290 1508 -text [translate "Cancel"] -font Helv_10_bold -fill "#DDDDDD" -anchor "center"
+		add_de1_button "firmware_update_2" {say [translate {Cancel}] $::settings(sound_button_in); app_exit} 1960 1200 2560 1600 ""
+		add_de1_variable "firmware_update_2" 40 120 -text [translate "It can take one minute to start"] -font Helv_8 -fill "#222222" -anchor "nw" -width [rescale_y_skin 900] -justify "left" -textvariable {[if {$::de1(device_handle) != 0} { start_firmware_update; disable_de1_reconnect; page_show firmware_update_3}; return [translate "It can take one minute to start"]]}
+
+	add_de1_variable "firmware_update_3" 40 20 -text "" -font Helv_16_bold -width 1200 -fill "#444444" -anchor "nw" -justify "left" -textvariable {[check_firmware_update_is_available][translate $::de1(firmware_update_button_label)]} 
+		add_de1_text "firmware_update_3" 40 1500 -text "[translate "Firmware Update"] 3/5" -font Helv_12_bold -fill "#888888" -anchor "nw" -justify "left"
+		add_de1_text "firmware_update_3" 2290 1508 -text [translate "Cancel"] -font Helv_10_bold -fill "#DDDDDD" -anchor "center"
+		add_de1_button "firmware_update_3" {say [translate {Exit}] $::settings(sound_button_in); app_exit} 1960 1200 2560 1600 ""
+		add_de1_variable "firmware_update_3" 730 700 -text "" -font Helv_10 -fill "#222222" -anchor "ne" -width [rescale_y_skin 700] -justify "right" -textvariable {[if {$::de1(currently_erasing_firmware) != 1 && $::de1(currently_updating_firmware) != 1} {page_show firmware_update_4}; return [firmware_uploaded_label]]} 
+		add_de1_variable "firmware_update_3" 730 750 -text "" -font Helv_10 -fill "#222222" -anchor "ne" -width [rescale_y_skin 700] -justify "right" -textvariable {[firmware_update_eta_label]} 
+
+	add_de1_text "firmware_update_4" 40 20 -text [translate "Turn your DE1 off"] -font Helv_16_bold -width 1200 -fill "#444444" -anchor "nw" -justify "left" 
+		add_de1_variable "firmware_update_4" 40 1400 -text "" -font Helv_10 -width 1200 -fill "#444444" -anchor "nw" -justify "left" -textvariable {[check_firmware_update_is_available][translate $::de1(firmware_update_button_label)]} 
+		add_de1_text "firmware_update_4" 40 1500 -text "[translate "Firmware Update"] 4/5" -font Helv_12_bold -fill "#888888" -anchor "nw" -justify "left"
+		add_de1_text "firmware_update_4" 2290 1508 -text [translate "Cancel"] -font Helv_10_bold -fill "#DDDDDD" -anchor "center"
+		add_de1_button "firmware_update_4" {say [translate {Exit}] $::settings(sound_button_in); app_exit} 1960 1200 2560 1600 ""
+		#add_de1_variable "firmware_update_5" 60 120 -text "" -font Helv_10_bold -fill "#222222" -anchor "nw" -width [rescale_y_skin 700] -justify "left" -textvariable {[if {$::de1(currently_updating_firmware) == 0} { page_show firmware_update_5 }; return [firmware_uploaded_label]]} 
+		#add_de1_text "firmware_update_4" 730 800 -text [subst {[translate "Turn your DE1 off. Wait a few seconds. Turn your DE1 on."]\n\n[translate "Please be patient. It can take several minutes for your DE1 to update."]}] -font Helv_8 -fill "#222222" -anchor "ne" -width [rescale_y_skin 700] -justify "right" 
+		add_de1_variable "firmware_update_4" 2030 300 -text "" -font Helv_16_bold -fill "#222222" -anchor "center" -width [rescale_y_skin 700] -justify "center" -textvariable {[if {$::de1(device_handle) == 0} { after 120000 enable_de1_reconnect; page_show firmware_update_5; }; return ""]}
+
+	add_de1_text "firmware_update_5" 40 20 -text [translate "Turn your DE1 on"] -font Helv_16_bold -width 1200 -fill "#444444" -anchor "nw" -justify "left" 
+		add_de1_text "firmware_update_5" 40 1500 -text "[translate "Firmware Update"] 5/5" -font Helv_12_bold -fill "#888888" -anchor "nw" -justify "left"
+		add_de1_text "firmware_update_5" 2290 1508 -text [translate "Exit"] -font Helv_10_bold -fill "#DDDDDD" -anchor "center"
+		add_de1_button "firmware_update_5" {say [translate {Cancel}] $::settings(sound_button_in); app_exit} 1960 1200 2560 1600 ""
+		add_de1_variable "firmware_update_5" 40 120 -text [translate "Please be patient. It can take several minutes for your DE1 to update."] -font Helv_8 -fill "#222222" -anchor "nw" -width [rescale_y_skin 840] -justify "left" -textvariable {[if {$::de1(device_handle) != 0} { app_exit }; return [translate "Please be patient. It can take several minutes for your DE1 to update."]]}
+		#add_de1_text "firmware_update_6" 730 800 -text [translate "Please be patient. It can take several minutes for your DE1 to update."] -font Helv_8 -fill "#222222" -anchor "ne" -width [rescale_y_skin 700] -justify "right" 
+
+
+
+		#add_de1_variable "firmware_update_4" 730 700 -text "" -font Helv_10_bold -fill "#222222" -anchor "ne" -width [rescale_y_skin 700] -justify "right" -textvariable {[if {$::de1(device_handle) == 0 && $::android == 1} { app_exit }; return [firmware_uploaded_label]]} 
+		#add_de1_text "firmware_update_4" 730 800 -text [subst {[translate "Turn your DE1 off. Wait a few seconds. Turn your DE1 on."]\n\n[translate "Please be patient. It can take several minutes for your DE1 to update."]}] -font Helv_8 -fill "#222222" -anchor "ne" -width [rescale_y_skin 700] -justify "right" 
+
+	if {$::android == 0} {
+		# cheat buttons when running on not-android, so as to be able to advance to the next screen
+		# purely for debugging the GUI
+		add_de1_button "firmware_update_1" {set ::de1(device_handle) 0} 0 1200 100 1600 ""
+		add_de1_button "firmware_update_2" {set ::de1(device_handle) 1 } 0 1200 100 1600 ""
+		add_de1_button "firmware_update_4" {set ::de1(device_handle) 0 } 0 1200 100 1600 ""
+		add_de1_button "firmware_update_5" {set ::de1(device_handle) 1 } 0 1200 100 1600 ""
+	}
+
+	
+	#set ::de1(currently_updating_firmware) 0
 
 	add_de1_text "settings_4" 2290 416 -text [translate "Language"] -font Helv_10_bold -fill "#FFFFFF" -anchor "center" 
-		add_de1_button "settings_4" {say [translate {Language}] $::settings(sound_button_in); set_next_page off languages; page_show languages; ; set_languages_scrollbar_dimensions}  1910 306 2530 510
+		add_de1_button "settings_4" {say [translate {Language}] $::settings(sound_button_in); page_to_show_when_off languages; ; set_languages_scrollbar_dimensions}  1910 306 2530 510
 
 		add_de1_text "languages" 1280 300 -text [translate "Language"] -font Helv_20_bold -width 1200 -fill "#444444" -anchor "center" -justify "center" 
-		#add_de1_text "languages" 1890 790 -text [translate "Language"] -font Helv_10_bold -fill "#7f879a" -justify "left" -anchor "nw"
 		add_de1_widget "languages" listbox 900 480 { 
 			set ::languages_widget $widget
 			bind $widget <<ListboxSelect>> ::load_language
@@ -517,7 +571,7 @@ add_de1_text "settings_4" 50 220 -text [translate "Update App"] -font Helv_10_bo
 
 
 	add_de1_text "settings_4" 1656 616 -text [translate "Misc"] -font Helv_10_bold -fill "#FFFFFF" -anchor "center" 
-		add_de1_button "settings_4" {say [translate {Misc}] $::settings(sound_button_in); set_next_page off measurements; page_show measurements; }  1290 520 1900 720
+		add_de1_button "settings_4" {say [translate {Misc}] $::settings(sound_button_in); page_to_show_when_off measurements; }  1290 520 1900 720
 		add_de1_text "measurements" 1280 300 -text [translate "Misc"] -font Helv_20_bold -width 1200 -fill "#444444" -anchor "center" -justify "center" 
 		
 		add_de1_text "measurements" 1600 500 -text [translate "Units"] -font Helv_10_bold -fill "#7f879a" -justify "left" -anchor "nw"
@@ -544,18 +598,18 @@ add_de1_text "settings_4" 50 220 -text [translate "Update App"] -font Helv_10_bo
 
 	# "done" button for all these sub-pages.
 	add_de1_text "tabletstyles languages measurements" 1280 1310 -text [translate "Done"] -font Helv_10_bold -fill "#fAfBff" -anchor "center"
-	add_de1_button "tabletstyles languages measurements" {say [translate {Done}] $::settings(sound_button_in); set_next_page off settings_4; page_show settings_4;} 980 1210 1580 1410 ""
+	add_de1_button "tabletstyles languages measurements" {say [translate {Done}] $::settings(sound_button_in); page_to_show_when_off settings_4;} 980 1210 1580 1410 ""
 ##############################################################################
 
 
 # exit app feature
 add_de1_text "settings_4" 1310 1130 -text [translate "Exit app"] -font Helv_10_bold -fill "#7f879a" -justify "left" -anchor "nw"
 	add_de1_text "settings_4" 1900 1290 -text [translate "Exit"] -font Helv_10_bold -fill "#FFFFFF" -anchor "center" 
-	add_de1_button "settings_4" {say [translate {Exit}] $::settings(sound_button_in); .can itemconfigure $::message_label -text [translate "Going to sleep"]; .can itemconfigure $::message_button_label -text [translate "Wait"]; after 10000 {.can itemconfigure $::message_button_label -text [translate "Ok"]; }; set_next_page off message; page_show message; save_settings; after 500 app_exit} 1290 1120 2550 1400
+	add_de1_button "settings_4" {say [translate {Exit}] $::settings(sound_button_in); .can itemconfigure $::message_label -text [translate "Going to sleep"]; .can itemconfigure $::message_button_label -text [translate "Wait"]; after 10000 {.can itemconfigure $::message_button_label -text [translate "Ok"]; }; page_to_show_when_off message; save_settings; after 500 app_exit} 1290 1120 2550 1400
 
 
 add_de1_text "settings_3" 55 544 -text [translate {Version}] -font Helv_10_bold -fill "#7f879a" -anchor "nw" -width [rescale_y_skin 1220] -justify "left" 
-	add_de1_variable "settings_3" 55 634 -text "" -font Helv_8 -fill "#7f879a" -anchor "nw" -width [rescale_y_skin 920] -justify "left" -textvariable {[de1_version_string]} 
+	add_de1_variable "settings_3" 55 616 -text "" -font Helv_7 -fill "#7f879a" -anchor "nw" -width [rescale_y_skin 1180] -justify "left" -textvariable {[de1_version_string]} 
 
 #add_de1_text "settings_3" 1310 380 -text [translate "Water level"] -font Helv_7_bold -fill "#7f879a" -anchor "nw" -width [rescale_y_skin 1000] -justify "left" 
 #	add_de1_variable "settings_3" 1600 380 -text "" -font Helv_7 -fill "#7f879a" -anchor "nw" -width [rescale_y_skin 1000] -justify "left" -textvariable {[round_to_integer $::de1(water_level)][translate mm]}
@@ -646,7 +700,7 @@ add_de1_text "travel_prepare" 1280 120 -text [translate "Prepare your espresso m
 	add_de1_text "travel_prepare" 1520 1000 -text [translate "After you press Ok, pull the water tank forward as shown in this photograph."] -font Helv_10_bold -fill "#a77171" -anchor "nw" -width 500
 	add_de1_text "travel_prepare" 280 1504 -text [translate "Cancel"] -font Helv_10_bold -fill "#FFFFFF" -anchor "center"
 	add_de1_text "travel_prepare" 2300 1504 -text [translate "Ok"] -font Helv_10_bold -fill "#FFFFFF" -anchor "center"
-	add_de1_button "travel_prepare" {say [translate {Cancel}] $::settings(sound_button_in);set_next_page off settings_3; page_show settings_3;} 0 1200 600 1600 ""
+	add_de1_button "travel_prepare" {say [translate {Cancel}] $::settings(sound_button_in);page_to_show_when_off settings_3;} 0 1200 600 1600 ""
 	add_de1_button "travel_prepare" {say [translate {Ok}] $::settings(sound_button_in); set_next_page off settings_3; start_air_purge} 1960 1200 2560 1600 ""
 	add_de1_text "travel_do" 1280 120 -text [translate "Now removing water from your espresso machine."] -font Helv_15_bold -fill "#a77171" -anchor "center" -width 1000
 	add_de1_text "travel_do" 1520 1000 -text [translate "You can turn your machine off once it is out of water. It will then be ready for transport."] -font Helv_10_bold -fill "#a77171" -anchor "nw" -width 500
@@ -660,7 +714,7 @@ add_de1_text "descale_prepare" 70 50 -text [translate "Prepare to descale"] -fon
 	add_de1_text "descale_prepare" 1050 1350 -text [translate "4) Push back the water tank.  Place the drip tray back without its cover."] -font Helv_8_bold -fill "#a77171" -anchor "sw" -justify left -width 400
 	add_de1_text "descale_prepare" 340 1504 -text [translate "Cancel"] -font Helv_10_bold -fill "#444444" -anchor "center"
 	add_de1_text "descale_prepare" 2233 1504 -text [translate "Descale now"] -font Helv_10_bold -fill "#444444" -anchor "center"
-	add_de1_button "descale_prepare" {say [translate {Cancel}] $::settings(sound_button_in);set_next_page off settings_3; page_show settings_3;} 0 1200 700 1600 ""
+	add_de1_button "descale_prepare" {say [translate {Cancel}] $::settings(sound_button_in);page_to_show_when_off settings_3;} 0 1200 700 1600 ""
 	add_de1_button "descale_prepare" {say [translate {Ok}] $::settings(sound_button_in); start_decaling} 1860 1200 2560 1600 ""
 	#add_de1_text "travel_do" 1280 120 -text [translate "Now removing water from your espresso machine."] -font Helv_15_bold -fill "#000000" -anchor "center" -width 1000
 	#add_de1_text "travel_do" 1520 1000 -text [translate "You can turn your machine off once it is out of water. It will then be ready for transport."] -font Helv_10_bold -fill "#000000" -anchor "nw" -width 500
@@ -706,7 +760,7 @@ add_de1_button "settings_1" {say [translate {save}] $::settings(sound_button_in)
 add_de1_button "settings_1" {say [translate {Cancel}] $::settings(sound_button_in); delete_selected_profile} 1120 280 1300 460
 
 # plus icon to create a new preset
-add_de1_button "settings_1" {say [translate {new}] $::settings(sound_button_in); set_next_page off "create_preset"; page_show off;} 1120 530 1300 730
+add_de1_button "settings_1" {say [translate {new}] $::settings(sound_button_in); page_to_show_when_off "create_preset"; } 1120 530 1300 730
 
 # eyeball icon to show or hide preset
 add_de1_button "settings_1" {say [translate {Choose which presets to show}] $::settings(sound_button_in); if {[ifexists ::profiles_hide_mode] != 1} { set ::profiles_hide_mode 1 } else { unset -nocomplain ::profiles_hide_mode } ; fill_profiles_listbox} 1120 800 1300 1000
@@ -753,12 +807,20 @@ add_de1_text "settings_1" 1360 230 -text [translate "Preview"] -font Helv_10_bol
 add_de1_text "settings_1" 1360 830 -text [translate "Description"] -font Helv_10_bold -fill "#7f879a" -justify "left" -anchor "nw" 
 
 add_de1_variable "settings_1" 1360 1240 -text "" -font Helv_10_bold -fill "#7f879a" -justify "left" -anchor "nw"  -textvariable {[profile_has_changed_set_colors; return [translate "Name and save"]]}
-	add_de1_widget "settings_1" multiline_entry 1360 900 {} -width 63 -height 6 -font Helv_6 -borderwidth 2 -bg #fbfaff  -foreground #4e85f4 -textvariable ::settings(profile_notes) -relief flat -highlightthickness 1 -highlightcolor #000000 
+	add_de1_variable "settings_1" 1360 900 -text $::settings(profile_notes) -font Helv_6 -fill "#7f879a" -justify "left" -anchor "nw"  -width [rescale_y_skin 1150] -textvariable {$::settings(profile_notes)}
 	add_de1_widget "settings_1" entry 1360 1310  {
 			set ::globals(widget_profile_name_to_save) $widget
 			bind $widget <Return> { say [translate {save}] $::settings(sound_button_in); borg toast [translate "Saved"]; save_profile; }
 		} -width 38 -font Helv_8  -borderwidth 1 -bg #fbfaff  -foreground #4e85f4 -textvariable ::settings(profile_title) -relief flat  -highlightthickness 1 -highlightcolor #000000 
 
+
+	add_de1_button "settings_1" {say [translate {Notes}] $::settings(sound_button_in); page_to_show_when_off profile_notes}  1350 820 2530 1180
+
+	add_de1_text "profile_notes" 1280 300 -text [translate "Notes"] -font Helv_20_bold -width 1200 -fill "#444444" -anchor "center" -justify "center" 
+	add_de1_widget "profile_notes" multiline_entry 250 440 {} -width 85 -height 12 -font Helv_8 -borderwidth 0 -bg #FFFFFF  -foreground #4e85f4 -textvariable ::settings(profile_notes) -relief flat -highlightthickness 1 -highlightcolor #000000 
+
+	add_de1_text "profile_notes" 1280 1310 -text [translate "Done"] -font Helv_10_bold -fill "#fAfBff" -anchor "center"
+	add_de1_button "profile_notes" {say [translate {Done}] $::settings(sound_button_in); page_to_show_when_off settings_1;} 980 1210 1580 1410 ""
 
 
 # labels for PREHEAT tab on
@@ -1006,4 +1068,5 @@ proc setting_profile_type_to_text { } {
 	}
 }
 
-#set_next_page off settings_1
+#set_next_page off firmware_update_1
+#set ::settings(force_fw_update) 1; set ::de1(in_fw_update_mode) 1; page_to_show_when_off firmware_update_1

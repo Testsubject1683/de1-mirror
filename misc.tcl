@@ -109,6 +109,9 @@ proc make_de1_dir {} {
         skins/default/standard_stop_buttons.tcl *
 
         skins/default/1280x800/nothing_on.png *
+        skins/default/1280x800/firmware_upgrade.jpg *
+        skins/default/1280x800/firmware_upgrade_on.jpg *
+        skins/default/1280x800/firmware_upgrade_off.jpg *
         skins/default/1280x800/espresso_on.png *
         skins/default/1280x800/steam_on.png *
         skins/default/1280x800/tea_on.png *
@@ -136,6 +139,9 @@ proc make_de1_dir {} {
         skins/default/1280x800/travel_prepare.jpg *
         skins/default/1280x800/descalewarning.jpg *
 
+        skins/default/2560x1600/firmware_upgrade.jpg *
+        skins/default/2560x1600/firmware_upgrade_on.jpg *
+        skins/default/2560x1600/firmware_upgrade_off.jpg *
         skins/default/2560x1600/nothing_on.png *
         skins/default/2560x1600/espresso_on.png *
         skins/default/2560x1600/steam_on.png *
@@ -544,6 +550,8 @@ proc make_de1_dir {} {
 
         profiles/Gentle\ and\ sweet.tcl *
         profiles/Cremina.tcl *
+        profiles/manual_flow.tcl *
+        profiles/manual_pressure.tcl *
         profiles/Londinium-R-by-Damian.tcl *
         profiles/Advanced\ spring\ lever.tcl *
         profiles/Blooming\ espresso.tcl *
