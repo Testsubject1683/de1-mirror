@@ -309,17 +309,21 @@ proc setup_environment {} {
 }
 
 proc check_if_battery_low_and_give_message {} {
-    if {[battery_percent] < 10} {
+    #msg "check_if_battery_low_and_give_message [battery_percent]"
+    if {[battery_percent] < 10 && $::android == 1} {
         info_page [subst {[translate "We noticed that your battery power is very low."]\n\n[translate "Maybe you are turning your DE1 off using the power switch on the back?"]\n\n[translate "If so, that prevents the tablet from charging."]\n\n[translate "Instead, put the DE1 to sleep by tapping the power icon in the App."]}] [translate "Ok"]
     }
 }
 
 proc battery_percent {} {
+
     array set powerinfo [sdltk powerinfo]
     set percent [ifexists powerinfo(percent)]
     if {$percent == ""} {
         set percent 100
     }
+
+    #msg "battery_percent: $percent"
 
     return $percent
 }
@@ -433,6 +437,8 @@ proc random_saver_file {} {
         catch {
             set savers [glob -nocomplain "[saver_directory]/${::screen_size_width}x${::screen_size_height}/*.jpg"]
         }
+
+
         if {$savers == ""} {
             catch {
                 file mkdir "[saver_directory]/${::screen_size_width}x${::screen_size_height}/"
@@ -455,9 +461,73 @@ proc random_saver_file {} {
         }
 
         set ::saver_files_cache [glob -nocomplain "[saver_directory]/${::screen_size_width}x${::screen_size_height}/*.jpg"]
+
+        if {$::settings(black_screen_saver) == 1} {    
+            # remove all other savers if we are only showing the black one
+            set ::saver_files_cache [glob -nocomplain "[saver_directory]/${::screen_size_width}x${::screen_size_height}/black_saver.jpg"]
+
+        } else {
+            # remove the black saver if we are not needing it
+            set ::saver_files_cache [lsearch -inline -all -not -exact $::saver_files_cache "[saver_directory]/${::screen_size_width}x${::screen_size_height}/black_saver.jpg"]
+        }
     }
     return [random_pick $::saver_files_cache]
 
+}
+
+proc tcl_introspection {} {
+    catch {
+        set txt ""
+
+        append txt "Commands available: [llength [info commands]]\nInstructions run: [info cmdcount]\nGlobals: [llength [info globals]]\nProcs: [llength [info procs]]\nAfter commands: [llength [after info]]\n"
+
+        append txt "Images loaded: [llength [image names]]\n"
+
+        set cnt 0
+        foreach i [image names] {
+            #append txt "[incr cnt]. $i [image height $i]x[image width $i] in use:[image inuse $i]\n"
+        }
+
+        #append txt \n
+
+        set vs [vector names]
+        append txt "Vectors: [llength $vs]"
+        set total 0
+        foreach v $vs {
+            set sz [$v length]
+            set total [expr {$total + $sz}]
+        }
+        append txt "\nTOTAL vector length: $total bytes\n"
+
+
+
+        set globs [info globals] 
+        append txt "Globals [llength $globs]:\n"
+        set txt2 ""
+        set total 0
+        set cnt 0
+        foreach g $globs {
+            if {[array exists $g] == 1} {   
+                set sz [string length [array get $g]]
+                if {$sz > 100} {
+                    append txt "[incr cnt]. array $g : $sz\n"
+                }
+                set total [expr {$total + $sz}]
+            } else {
+                set sz [string length $g]
+                if {$sz > 100} {
+                    append txt "[incr cnt]. string $g : $sz\n"
+                }
+                set total [expr {$total + $sz}]
+            }
+
+        }
+        append txt "TOTAL global variable memory used: $total bytes\n\n"
+
+        msg $txt
+    }
+
+    after [expr {60 * 60 * 1000}] tcl_introspection
 }
 
 proc random_splash_file {} {
@@ -627,13 +697,15 @@ proc translate {english} {
             #puts "$available([language])"
 
             #puts "translate: '[encoding convertfrom $available([language])]'"
-            if {$available([language]) != ""} {
+            if {[ifexists available([language])] != ""} {
                 # if the translated version of the English is NOT blank, return it
                 #log_to_debug_file [encoding names]
                 #log_to_debug_file "English: '$available([language])'"
                 if {[language] == "ar" && ($::android == 1 || $::undroid == 1)} {
                     # use the "arb" column on Android/Undroid because they do not correctly right-to-left text like OSX does
-                    return $available(arb)
+                    if {[ifexists available(arb)] != ""} {
+                        return $available(arb)
+                    }
                 }
 
                 return $available([language])

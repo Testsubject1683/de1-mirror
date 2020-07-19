@@ -41,6 +41,59 @@ proc make_de1_dir {} {
         splash/2560x1600/watercolor.jpg *
         splash/2560x1600/wired_superheroes.jpg *
 
+        skins/SWDark3/screen_saver/2560x1600/saver-1.jpg *
+        skins/SWDark3/screen_saver/2560x1600/saver-2.jpg *
+        skins/SWDark3/screen_saver/2560x1600/saver-3.jpg *
+        skins/SWDark3/screen_saver/1280x800/saver-1.jpg *
+        skins/SWDark3/screen_saver/1280x800/saver-2.jpg *
+        skins/SWDark3/screen_saver/1280x800/saver-3.jpg *
+        skins/SWDark3/swdark2_functions.tcl *
+        skins/SWDark3/skin.tcl *
+        skins/SWDark3/2560x1600/water_3.png *
+        skins/SWDark3/2560x1600/water_2.png *
+        skins/SWDark3/2560x1600/steam_1.png *
+        skins/SWDark3/2560x1600/steam_3.png *
+        skins/SWDark3/2560x1600/icon.jpg *
+        skins/SWDark3/2560x1600/espresso_1_zoomed.png *
+        skins/SWDark3/2560x1600/water_1.png *
+        skins/SWDark3/2560x1600/steam_2.png *
+        skins/SWDark3/2560x1600/sleep.png *
+        skins/SWDark3/2560x1600/espresso_3_zoomed.png *
+        skins/SWDark3/2560x1600/espresso_2.png *
+        skins/SWDark3/2560x1600/espresso_3.png *
+        skins/SWDark3/2560x1600/espresso_1.png *
+        skins/SWDark3/2560x1600/fill_tank.png *
+        skins/SWDark3/2560x1600/preheat_1.png *
+        skins/SWDark3/2560x1600/saver-1.png *
+        skins/SWDark3/2560x1600/preheat_2.png *
+        skins/SWDark3/2560x1600/saver-2.png *
+        skins/SWDark3/2560x1600/saver-3.png *
+        skins/SWDark3/2560x1600/preheat_3.png *
+        skins/SWDark3/2560x1600/preheat_4.png *
+        skins/SWDark3/2560x1600/espresso_2_zoomed.png *
+        skins/SWDark3/userdata/swdark2_usersettings.tdb *
+        skins/SWDark3/1280x800/water_3.png *
+        skins/SWDark3/1280x800/water_2.png *
+        skins/SWDark3/1280x800/steam_1.png *
+        skins/SWDark3/1280x800/steam_3.png *
+        skins/SWDark3/1280x800/icon.jpg *
+        skins/SWDark3/1280x800/espresso_1_zoomed.png *
+        skins/SWDark3/1280x800/water_1.png *
+        skins/SWDark3/1280x800/steam_2.png *
+        skins/SWDark3/1280x800/sleep.png *
+        skins/SWDark3/1280x800/espresso_3_zoomed.png *
+        skins/SWDark3/1280x800/espresso_2.png *
+        skins/SWDark3/1280x800/espresso_3.png *
+        skins/SWDark3/1280x800/espresso_1.png *
+        skins/SWDark3/1280x800/fill_tank.png *
+        skins/SWDark3/1280x800/preheat_1.png *
+        skins/SWDark3/1280x800/saver-1.png *
+        skins/SWDark3/1280x800/preheat_2.png *
+        skins/SWDark3/1280x800/saver-2.png *
+        skins/SWDark3/1280x800/saver-3.png *
+        skins/SWDark3/1280x800/preheat_3.png *
+        skins/SWDark3/1280x800/preheat_4.png *
+        skins/SWDark3/1280x800/espresso_2_zoomed.png *
 
 
     }
@@ -183,59 +236,6 @@ proc make_de1_dir {} {
         skins/Antibes/2560x1600/steam_on.png *
         skins/Antibes/2560x1600/tea_on.png *    
 
-        skins/SWDark3/screen_saver/2560x1600/saver-1.jpg *
-        skins/SWDark3/screen_saver/2560x1600/saver-2.jpg *
-        skins/SWDark3/screen_saver/2560x1600/saver-3.jpg *
-        skins/SWDark3/screen_saver/1280x800/saver-1.jpg *
-        skins/SWDark3/screen_saver/1280x800/saver-2.jpg *
-        skins/SWDark3/screen_saver/1280x800/saver-3.jpg *
-        skins/SWDark3/swdark2_functions.tcl *
-        skins/SWDark3/skin.tcl *
-        skins/SWDark3/2560x1600/water_3.png *
-        skins/SWDark3/2560x1600/water_2.png *
-        skins/SWDark3/2560x1600/steam_1.png *
-        skins/SWDark3/2560x1600/steam_3.png *
-        skins/SWDark3/2560x1600/icon.jpg *
-        skins/SWDark3/2560x1600/espresso_1_zoomed.png *
-        skins/SWDark3/2560x1600/water_1.png *
-        skins/SWDark3/2560x1600/steam_2.png *
-        skins/SWDark3/2560x1600/sleep.png *
-        skins/SWDark3/2560x1600/espresso_3_zoomed.png *
-        skins/SWDark3/2560x1600/espresso_2.png *
-        skins/SWDark3/2560x1600/espresso_3.png *
-        skins/SWDark3/2560x1600/espresso_1.png *
-        skins/SWDark3/2560x1600/fill_tank.png *
-        skins/SWDark3/2560x1600/preheat_1.png *
-        skins/SWDark3/2560x1600/saver-1.png *
-        skins/SWDark3/2560x1600/preheat_2.png *
-        skins/SWDark3/2560x1600/saver-2.png *
-        skins/SWDark3/2560x1600/saver-3.png *
-        skins/SWDark3/2560x1600/preheat_3.png *
-        skins/SWDark3/2560x1600/preheat_4.png *
-        skins/SWDark3/2560x1600/espresso_2_zoomed.png *
-        skins/SWDark3/userdata/swdark2_usersettings.tdb *
-        skins/SWDark3/1280x800/water_3.png *
-        skins/SWDark3/1280x800/water_2.png *
-        skins/SWDark3/1280x800/steam_1.png *
-        skins/SWDark3/1280x800/steam_3.png *
-        skins/SWDark3/1280x800/icon.jpg *
-        skins/SWDark3/1280x800/espresso_1_zoomed.png *
-        skins/SWDark3/1280x800/water_1.png *
-        skins/SWDark3/1280x800/steam_2.png *
-        skins/SWDark3/1280x800/sleep.png *
-        skins/SWDark3/1280x800/espresso_3_zoomed.png *
-        skins/SWDark3/1280x800/espresso_2.png *
-        skins/SWDark3/1280x800/espresso_3.png *
-        skins/SWDark3/1280x800/espresso_1.png *
-        skins/SWDark3/1280x800/fill_tank.png *
-        skins/SWDark3/1280x800/preheat_1.png *
-        skins/SWDark3/1280x800/saver-1.png *
-        skins/SWDark3/1280x800/preheat_2.png *
-        skins/SWDark3/1280x800/saver-2.png *
-        skins/SWDark3/1280x800/saver-3.png *
-        skins/SWDark3/1280x800/preheat_3.png *
-        skins/SWDark3/1280x800/preheat_4.png *
-        skins/SWDark3/1280x800/espresso_2_zoomed.png *
 
 
         skins/SWDark4/screen_saver/2560x1600/saver-1.jpg *
@@ -264,6 +264,7 @@ proc make_de1_dir {} {
         skins/SWDark4/2560x1600/saver-1.png *
         skins/SWDark4/2560x1600/saver-2.png *
         skins/SWDark4/2560x1600/saver-3.png *
+        skins/SWDark4/2560x1600/swbrewsettings.png *
         skins/SWDark4/userdata/swdark_usersettings.tdb *
         skins/SWDark4/1280x800/icon.jpg *
         skins/SWDark4/1280x800/sleep.png *
@@ -276,6 +277,7 @@ proc make_de1_dir {} {
         skins/SWDark4/1280x800/home_2_single.png *
         skins/SWDark4/1280x800/home_2_split.png *
         skins/SWDark4/1280x800/swsettings.png *
+        skins/SWDark4/1280x800/swbrewsettings.png *
 
 
         skins/Borg/skin.tcl *
@@ -500,6 +502,7 @@ proc make_de1_dir {} {
         skins/Insight/2560x1600/describe_espresso.jpg *
         skins/Insight/2560x1600/describe_espresso2.jpg *
 
+        saver/1280x800/black_saver.jpg *
         saver/1280x800/Black\ Steel.jpg *
         saver/1280x800/Cozy-Home.jpg *
         saver/1280x800/Floral.jpg *
@@ -523,6 +526,7 @@ proc make_de1_dir {} {
         saver/1280x800/steampunk_latte.jpg *
         saver/1280x800/three_women.jpg *     
         saver/1280x800/rainbow_dj.jpg *     
+        saver/2560x1600/black_saver.jpg *
         saver/2560x1600/Black\ Steel.jpg *
         saver/2560x1600/Cozy-Home.jpg *
         saver/2560x1600/Floral.jpg *
@@ -555,6 +559,7 @@ proc make_de1_dir {} {
         profiles/Londinium-R-by-Damian.tcl *
         profiles/Advanced\ spring\ lever.tcl *
         profiles/Blooming\ espresso.tcl *
+        profiles/cold_brew.tcl *
         profiles/Blooming\ allonge.tcl *
         profiles/Classic\ Italian\ espresso.tcl *
         profiles/Flow\ profile\ for\ milky\ drinks.tcl *
@@ -572,6 +577,7 @@ proc make_de1_dir {} {
         profiles/Two\ spring\ lever\ machine\ to\ 9\ bar.tcl *
         profiles/Innovative\ long\ preinfusion.tcl *
         profiles/default.tcl *
+        profiles/default_descending.tcl *        
         profiles/rao_allonge.tcl *
         profiles/e61\ classic\ at\ 9\ bar.tcl *
         profiles/e61\ rocketing\ up\ to\ 10\ bar.tcl *

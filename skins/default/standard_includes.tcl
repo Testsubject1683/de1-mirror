@@ -1,18 +1,13 @@
 set ::skindebug 0
 
 ##############################################################################################################################################################################################################################################################################
-# the graphics for each of the main espresso machine modes
-add_de1_page "off" "nothing_on.png"
-add_de1_page "espresso" "espresso_on.png"
-add_de1_page "steam" "steam_on.png"
-add_de1_page "water hotwaterrinse" "tea_on.png"
 
 # most skins will not bother replacing these graphics
 add_de1_page "sleep" "sleep.jpg" "default"
 add_de1_page "tankfilling" "filling_tank.jpg" "default"
 add_de1_page "tankempty refill" "fill_tank.jpg" "default"
 add_de1_page "cleaning" "cleaning.jpg" "default"
-add_de1_page "message calibrate infopage tabletstyles languages profile_notes measurements" "settings_message.png" "default"
+add_de1_page "message calibrate calibrate2 infopage tabletstyles languages profile_notes measurements temperature_steps" "settings_message.png" "default"
 add_de1_page "create_preset" "settings_3_choices.png" "default"
 add_de1_page "firmware_update_3" "firmware_upgrade.jpg" "default"
 add_de1_page "firmware_update_1 firmware_update_4" "firmware_upgrade_off.jpg" "default"
@@ -42,11 +37,8 @@ add_de1_page "ghc_steam ghc_espresso ghc_flush ghc_hotwater" "ghc.jpg" "default"
 	add_de1_text "ghc_hotwater" 1630 600 -text "\[      \]\n[translate {Tap here for hot water}]" -font Helv_30_bold -fill "#FFFFFF" -anchor "ne" -justify right  -width 820
 	add_de1_button "ghc_steam ghc_espresso ghc_flush ghc_hotwater" {say [translate {Ok}] $::settings(sound_button_in); page_show off;} 0 0 2560 1600 
 
-
 set_de1_screen_saver_directory "[homedir]/saver"
-
 
 # include the generic settings features for all DE1 skins.  
 source "[homedir]/skins/default/de1_skin_settings.tcl"
 
-#et_next_page off tankempty

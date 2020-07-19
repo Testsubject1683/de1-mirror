@@ -287,14 +287,17 @@ proc stop_timer_espresso_pour {} {
 }
 
 proc stop_timer_water_pour {} {
+	msg "stop_timer_water_pour"
 	set ::timers(water_pour_stop) [clock milliseconds]
 }
 
 proc stop_timer_steam_pour {} {
+	msg "stop_timer_steam_pour"
 	set ::timers(steam_pour_stop) [clock milliseconds]
 }
 
 proc stop_timer_flush_pour {} {
+	msg "stop_timer_flush_pour"
 	set ::timers(flush_pour_stop) [clock milliseconds]
 }
 
@@ -454,19 +457,25 @@ proc steam_pour_millitimer {} {
 }
 
 proc flush_pour_timer {} {
+	set t ""
+	set c 0
 	if {[info exists ::timers(flush_pour_start)] != 1} {
-		return 0
-	}
-
-	if {$::timers(flush_pour_start) == 0} {
-		return 0
+		set t "-0"
+		set c 1
+	} elseif {$::timers(flush_pour_start) == 0} {
+		set t "-1"
+		set c 2
 	} elseif {$::timers(flush_pour_stop) == 0} {
 		# no stop, so show current elapsed time
-		return [expr {([clock milliseconds] - $::timers(flush_pour_start))/1000}]
+		set t [expr {([clock milliseconds] - $::timers(flush_pour_start))/1000}]
+		set c 3
 	} else {
 		# stop occured, so show that.
-		return [expr {($::timers(flush_pour_stop) - $::timers(flush_pour_start))/1000}]
+		set t [expr {($::timers(flush_pour_stop) - $::timers(flush_pour_start))/1000}]
+		set c 4
 	}
+	#msg "flush_pour_timer: $t ($c)"
+	return $t
 }
 proc done_timer {} {
 	if {$::timers(stop) == 0} {
@@ -808,6 +817,13 @@ proc group_head_heating_text {} {
 	}
 }
 
+proc return_seconds_divided_by_ten {in} {
+	if {$in == ""} {return ""}
+
+	set t [expr {$in / 10.0}]
+	return "[round_to_one_digits $t] [translate "seconds"]"
+
+}
 proc timer_text {} {
 	return [subst {[timer] [translate "seconds"]}]
 }
@@ -818,6 +834,11 @@ proc return_liquid_measurement {in} {
 	} else {
 		return [subst {[round_to_integer [ml_to_oz $in]] oz}]
 	}
+}
+
+proc return_flow_calibration_measurement {in} {
+	return [subst {[round_to_one_digits [expr {0.1 * $in}]] [translate "mL/s"]}]
+
 }
 
 proc return_flow_measurement {in} {
@@ -1246,7 +1267,6 @@ proc return_temperature_setting_or_off {in} {
 		return [return_temperature_setting $in]
 	}
 }
-
 
 proc return_temperature_setting {in} {
 	#msg "return_temperature_setting: $in"
@@ -2600,7 +2620,15 @@ proc profile_has_not_changed_set args {
 }
 
 proc load_settings_vars {fn} {
-	#msg "load_settings_vars $fn"
+
+	msg "load_settings_vars $fn"
+
+	# default to no temp steps, so as to migrate older profiles that did not have this setting, and not accidentally enble this feature on them
+	unset -nocomplain ::settings(espresso_temperature_steps_enabled) 
+
+	# default value 
+	set ::settings(final_desired_shot_volume_advanced_count_start) 0
+
 	#error "load_settings_vars"
 	# set the default profile type to use, this can be over-ridden by the saved profile
 	if {[de1plus]} {
@@ -2655,7 +2683,7 @@ proc save_settings_vars {fn varlist} {
 }
 
 proc profile_vars {} {
- 	return { advanced_shot author espresso_hold_time preinfusion_time espresso_pressure espresso_decline_time pressure_end espresso_temperature settings_profile_type flow_profile_preinfusion flow_profile_preinfusion_time flow_profile_hold flow_profile_hold_time flow_profile_decline flow_profile_decline_time flow_profile_minimum_pressure preinfusion_flow_rate profile_notes water_temperature final_desired_shot_volume final_desired_shot_weight final_desired_shot_weight_advanced tank_desired_water_temperature final_desired_shot_volume_advanced preinfusion_guarantee profile_title profile_language preinfusion_stop_pressure profile_hide}
+ 	return { advanced_shot espresso_temperature_steps_enabled author espresso_hold_time preinfusion_time espresso_pressure espresso_decline_time pressure_end espresso_temperature espresso_temperature_0 espresso_temperature_1 espresso_temperature_2 espresso_temperature_3 settings_profile_type flow_profile_preinfusion flow_profile_preinfusion_time flow_profile_hold flow_profile_hold_time flow_profile_decline flow_profile_decline_time flow_profile_minimum_pressure preinfusion_flow_rate profile_notes water_temperature final_desired_shot_volume final_desired_shot_weight final_desired_shot_weight_advanced tank_desired_water_temperature final_desired_shot_volume_advanced preinfusion_guarantee profile_title profile_language preinfusion_stop_pressure profile_hide}
 }
 
 proc save_profile {} {
@@ -3011,15 +3039,15 @@ proc check_firmware_update_is_available {} {
 	if {$::settings(ghc_is_installed) != 0} {
 		# ok to do v1.3 fw update
 		#msg "v1.3 can do fw updates at the moment"
-		if {$::settings(force_fw_update) != 1} {
-			set ::de1(firmware_update_button_label) "Up to date"
-			return ""
-		}
+		#if {$::settings(force_fw_update) != 1} {
+			#set ::de1(firmware_update_button_label) "Up to date"
+			#return ""
+		#}
 	} else {
 		#msg "No firmware updates at the moment for machines earlier than v1.3 unless forced to do so"
 		#if {$::settings(force_fw_update) != 1} {
-			set ::de1(firmware_update_button_label) "Up to date"
-			return ""
+		#	set ::de1(firmware_update_button_label) "Up to date"
+		#	return ""
 		#}
 	}
 
@@ -3028,12 +3056,26 @@ proc check_firmware_update_is_available {} {
 		msg "Firmware [fwfile] CRC is $::de1(firmware_crc)"
 	}
 
+	# obsolete method, comparing settings-saved CRC of last fw upload, to what DE1 reports as CRC
 	if {($::de1(firmware_crc) != [ifexists ::settings(firmware_crc)]) && $::de1(currently_updating_firmware) == ""} {
 		#msg "firmware CRCs are not the same"
-		set ::de1(firmware_update_button_label) "Firmware update available"
+		##obsolete - set ::de1(firmware_update_button_label) "Firmware update available"
 	} else {
 		#msg "firmware CRCs are the same $::de1(firmware_crc) == [ifexists ::settings(firmware_crc)]"
 	}
+
+	set ::de1(firmware_update_button_label) "Up to date"
+
+	# new method, directly comparing the incremented version number
+	if {[ifexists ::de1(Firmware_file_Version)] != "" && [ifexists ::settings(firmware_version_number)] != ""} {
+		if {[ifexists ::de1(Firmware_file_Version)] != [ifexists ::settings(firmware_version_number)]} {
+			set ::de1(firmware_update_button_label) "Firmware update available"
+		}
+
+	}
+
+
+
 	return ""
 }
 
@@ -3106,10 +3148,14 @@ proc de1_version_bleapi {} {
 
 proc de1_version_string {} {
 	array set v $::de1(version)
+
+	#set v(BLE_Sha) [clock seconds]
+
 	set version "BLE v[ifexists v(BLE_Release)].[ifexists v(BLE_Changes)].[ifexists v(BLE_Commits)], API v[ifexists v(BLE_APIVersion)], SHA=[ifexists v(BLE_Sha)]"
 	if {[ifexists v(FW_Sha)] != [ifexists v(BLE_Sha)] && [ifexists v(FW_Sha)] != 0} {
 		append version "\nFW v[ifexists v(FW_Release)].[ifexists v(FW_Changes)].[ifexists v(FW_Commits)], API v[ifexists v(FW_APIVersion)], SHA=[ifexists v(FW_Sha)]"
 	}
+
 
 	array set modelarr [list 0 [translate "unknown"] 1 DE1 2 DE1+ 3 DE1PRO 4 DE1XL 5 DE1CAFE]
 
@@ -3119,14 +3165,28 @@ proc de1_version_string {} {
 	}
 	
 	if {$brev != ""} {
-		append version ", pcb=$brev"
+		append version ", [translate pcb]=$brev"
 	}
 	if {[ifexists ::settings(machine_model)] != "" && [ifexists ::settings(machine_model)] != "0"} {
-		append version ", model=[ifexists modelarr([ifexists ::settings(machine_model)])]"
+		append version ", [translate model]=[ifexists modelarr([ifexists ::settings(machine_model)])]"
 	}
 	if {[ifexists ::settings(firmware_version_number)] != ""} {
-		append version ", rev=[ifexists ::settings(firmware_version_number)]"
+		append version ", [translate current]=[ifexists ::settings(firmware_version_number)]"
 	}
+	
+	if {[ifexists ::de1(Firmware_file_Version)] != "" && [ifexists ::settings(firmware_version_number)] != "" && [ifexists ::de1(Firmware_file_Version)] != [ifexists ::settings(firmware_version_number)] } {
+		append version ", [translate available]=[ifexists ::de1(Firmware_file_Version)]"
+	}
+
+	if {$::settings(firmware_sha) != "" && [ifexists v(BLE_Sha)] != "" && $::settings(firmware_sha) != [ifexists v(BLE_Sha)] } {
+		after 5000 [list info_page "[translate {Your DE1 firmware has been upgraded}]\n\n$version" [translate "Ok"]]
+	}
+	
+	if {[ifexists v(BLE_Sha)] != "" && $::settings(firmware_sha) != [ifexists v(BLE_Sha)] } {
+		set ::settings(firmware_sha) $v(BLE_Sha)
+		save_settings
+	}
+
 	return $version
 
 	#return "HW=[ifexists v(BLEFWMajor)].[ifexists v(BLEFWMinor)].[ifexists v(P0BLECommits)].[ifexists v(Dirty)] API=[ifexists v(APIVersion)] SHA=[ifexists v(BLESha)]"
@@ -3256,6 +3316,8 @@ proc return_steam_heater_calibration {steam_temperature} {
 	return [return_temperature_setting $steam_temperature]
 }
 
+
+# obsolete - does not work reliably
 proc Restart_app {} {
    #foreach w [winfo children .] {
     ##   destroy $w
@@ -3337,3 +3399,81 @@ foreach p [info procs] { set kpv(p,$p) 1 }
 
     source "de1plus.tcl"
  }
+
+
+
+ proc toggle_espresso_steps_option {} {
+
+ 	if {[ifexists ::settings(espresso_temperature_steps_enabled)] != 1} {
+ 		set ::settings(espresso_temperature_steps_enabled) 1 
+ 	} else {
+ 		set ::settings(espresso_temperature_steps_enabled) 0 
+
+ 	} 		
+
+	msg "Clearing default step temps"
+	set ::settings(espresso_temperature_0) $::settings(espresso_temperature)
+	set ::settings(espresso_temperature_1) $::settings(espresso_temperature)
+	set ::settings(espresso_temperature_2) $::settings(espresso_temperature)
+	set ::settings(espresso_temperature_3) $::settings(espresso_temperature)
+ 	
+
+ 	msg "toggle_espresso_steps_option $::settings(espresso_temperature_steps_enabled)"
+
+}
+
+proc round_and_return_step_temperature_setting {varname} {
+
+	if {[ifexists ::settings(espresso_temperature_steps_enabled)] != 1} {
+		return ""
+	}
+
+	set v [ifexists $varname]
+	if {$v == ""} {
+		msg "can't find variable $varname in round_and_return_step_temperature_setting"
+		return ""
+	}
+
+	return [round_and_return_temperature_setting $varname]
+}
+
+proc range_check_variable {varname low high} {
+	
+	#msg "range_check_variable $varname"
+	upvar $varname var
+	if {$var < $low} {
+		msg "variable $varname was under $low"
+		set var $low
+	}
+	if {$var > $high} {
+		msg "variable $varname was over $high"
+		set var $high
+	}
+}
+
+proc change_espresso_temperature {amount} {
+
+	if {[ifexists ::settings(espresso_temperature_steps_enabled)] == 1} {
+
+		# if step temps are enabled then set the preinfusion start temp to the global temp 
+		# and then apply the relative change desired to each subsequent step
+
+		set ::settings(espresso_temperature) [expr {$::settings(espresso_temperature) + $amount}]
+		set ::settings(espresso_temperature_0) $::settings(espresso_temperature)			
+		set ::settings(espresso_temperature_1) [expr {$::settings(espresso_temperature_1) + $amount}]
+		set ::settings(espresso_temperature_2) [expr {$::settings(espresso_temperature_2) + $amount}]
+		set ::settings(espresso_temperature_3) [expr {$::settings(espresso_temperature_3) + $amount}]
+
+
+		range_check_variable ::settings(espresso_temperature_0) 0 100
+		range_check_variable ::settings(espresso_temperature_1) 0 100
+		range_check_variable ::settings(espresso_temperature_2) 0 100
+		range_check_variable ::settings(espresso_temperature_3) 0 100
+		
+
+	} else {
+		set ::settings(espresso_temperature) [expr {$::settings(espresso_temperature) + $amount}]
+	}
+
+	range_check_variable ::settings(espresso_temperature) 0 100
+}

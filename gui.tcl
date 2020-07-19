@@ -168,9 +168,16 @@ proc add_de1_page {names filename {skin ""} } {
 }	
 
 proc set_de1_screen_saver_directory {{dirname {}}} {
+
+	# force use of our default saver directory if the black screen saver is enabled, otherwise use whatever the skin chooses
+	if {$::settings(black_screen_saver) == 1} {
+		set dirname "[homedir]/saver"
+	}
+
+
 	global saver_directory
 	if {$dirname != ""} {
-	set saver_directory $dirname
+		set saver_directory $dirname
 	}
 
 	#set pngfilename [random_saver_file]
@@ -195,9 +202,16 @@ proc setup_display_time_in_screen_saver {} {
 	set ::clocktime [clock seconds]
 	set ::previous_clocktime 0
 	
-	set ::saver_clock2 [add_de1_variable "saver" 1278 898 -justify center -anchor "center" -text "" -font Helv_30_bold -fill "#CCCCCC" -width 2000 -textvariable {[time_format $::clocktime 1]}]
-	set ::saver_clock3 [add_de1_variable "saver" 1282 902 -justify center -anchor "center" -text "" -font Helv_30_bold -fill "#666666" -width 2000 -textvariable {[time_format $::clocktime 1]}]
-	set ::saver_clock [add_de1_variable "saver" 1280 900 -justify center -anchor "center" -text "" -font Helv_30_bold -fill "#F8F8F8" -width 2000 -textvariable {[time_format $::clocktime 1]}]
+	if {$::settings(black_screen_saver) == 1} {    
+		set ::saver_clock2 [add_de1_variable "saver" 1278 898 -justify center -anchor "center" -text "" -font Helv_30_bold -fill "#111111" -width 2000 -textvariable {[time_format $::clocktime 1]}]
+		set ::saver_clock3 [add_de1_variable "saver" 1282 902 -justify center -anchor "center" -text "" -font Helv_30_bold -fill "#222222" -width 2000 -textvariable {[time_format $::clocktime 1]}]
+		set ::saver_clock [add_de1_variable "saver" 1280 900 -justify center -anchor "center" -text "" -font Helv_30_bold -fill "#444444" -width 2000 -textvariable {[time_format $::clocktime 1]}]
+	} else {
+		set ::saver_clock2 [add_de1_variable "saver" 1278 898 -justify center -anchor "center" -text "" -font Helv_30_bold -fill "#CCCCCC" -width 2000 -textvariable {[time_format $::clocktime 1]}]
+		set ::saver_clock3 [add_de1_variable "saver" 1282 902 -justify center -anchor "center" -text "" -font Helv_30_bold -fill "#666666" -width 2000 -textvariable {[time_format $::clocktime 1]}]
+		set ::saver_clock [add_de1_variable "saver" 1280 900 -justify center -anchor "center" -text "" -font Helv_30_bold -fill "#F8F8F8" -width 2000 -textvariable {[time_format $::clocktime 1]}]
+	}
+
 
 	after 1000 saver_clock_move
 	proc saver_clock_move {} {
@@ -944,20 +958,34 @@ proc resized_filename {infile} {
 }
 
 proc change_screen_saver_img {} {
-	#msg "change_screen_saver_img $::de1(current_context)"
+
+	if {[llength [ifexists ::saver_files_cache]] == 1} {
+		# no need to change the background screen saver image if it's only 1
+		#msg "xxxxno need to change the background screen saver image if it's only 1"
+		return
+	}
+
+	#msg "change_screen_saver_img $::de1(current_context) '[page_displaying_now]'"
 	#if {$::de1(current_context) == "saver"} {
-		image delete saver
+		catch {
+			image delete saver
+		}
 
 		set fn [random_saver_file]
 
+		set err ""
 		catch {
 			# this can happen during an upgrade
 			image create photo saver -file $fn
 			.can create image {0 0} -anchor nw -image saver  -tag saver -state hidden
 			.can lower saver
+		} err
+
+		if {$err != ""} {
+			error $err
 		}
 		#update
-	#}#
+	#}
 
 	if {[info exists ::change_screen_saver_image_handle] == 1} {
 		after cancel $::change_screen_saver_image_handle
@@ -1253,9 +1281,10 @@ proc display_brightness {percentage} {
 	get_set_tablet_brightness $percentage
 }
 
+
 proc page_display_change {page_to_hide page_to_show} {
 
-	msg [stacktrace]
+	#msg [stacktrace]
 
 	#if {$page_to_hide == ""} {
 	#}
@@ -1270,7 +1299,7 @@ proc page_display_change {page_to_hide page_to_show} {
 
 	if {$::de1(current_context) == $page_to_show} {
 		#jbtemp
-		msg "page_display_change returning because ::de1(current_context) == $page_to_show"
+		#msg "page_display_change returning because ::de1(current_context) == $page_to_show"
 		return 
 	}
 
@@ -1294,7 +1323,11 @@ proc page_display_change {page_to_hide page_to_show} {
 
 	# set the brightness in one place
 	if {$page_to_show == "saver" } {
-		display_brightness $::settings(saver_brightness)
+		if {$::settings(black_screen_saver) == 1} {
+			display_brightness 0
+		} else {
+			display_brightness $::settings(saver_brightness)
+		}
 		borg systemui $::android_full_screen_flags  
 	} else {
 		display_brightness $::settings(app_brightness)
@@ -1305,6 +1338,8 @@ proc page_display_change {page_to_hide page_to_show} {
 
 
 	if {$::settings(stress_test) == 1 && $::de1_num_state($::de1(state)) == "Idle" && [info exists ::idle_next_step] == 1} {
+
+		msg "Doing next stress test step: '$::idle_next_step '"
 		set todo $::idle_next_step 
 		unset -nocomplain ::idle_next_step 
 		eval $todo
@@ -1408,7 +1443,7 @@ proc page_display_change {page_to_hide page_to_show} {
 		}
 	}
 
-	msg "Switched to page: $page_to_show"
+	msg "Switched to page: $page_to_show [stacktrace]"
 
 	update_onscreen_variables
 	#after 100 update_chart
@@ -1772,6 +1807,8 @@ proc run_de1_app {} {
 
 proc ui_startup {} {
 	puts "setup_environment"
+
+
 	load_settings
 	setup_environment
 	bluetooth_connect_to_devices
@@ -1793,6 +1830,7 @@ proc ui_startup {} {
 	# check for app updates, a half day after startup, and then every 24h thereafter
 	#after 43200000 scheduled_app_update_check
 	after 3000 scheduled_app_update_check
+	tcl_introspection
 
 	run_de1_app
 	vwait forever
@@ -2031,9 +2069,59 @@ proc listbox_moveto {lb dest1 dest2} {
 }
 
 # convenience function to link a "scale" widget with a "listbox" so that the scale becomes a scrollbar to the listbox, rather than using the ugly Tk native scrollbar
+
+proc listbox_moveto_new {lb dest1 dest2} {
+
+    # get number of items visible in list box
+
+    set visible_items [lindex [split [$lb configure -height] " "] 4]
+
+    # get total items in listbox
+
+    set total_items [$lb size]
+
+    # if all the items fit on screen then there is nothing to do
+
+    if {$visible_items >= $total_items} {return}
+
+    # determine which item would be at the top if the last items is at the bottom
+
+    set last_top_item [expr $total_items - $visible_items]
+
+    # determine which item should be at the top for the requested value
+
+    set top_item [expr int(round($last_top_item * $dest2))]
+
+    $lb yview $top_item
+
+}
+
+# convenience function to link a "scale" widget with a "listbox" so that the scale becomes a scrollbar to the listbox, rather than using the ugly Tk native scrollbar
 proc scale_scroll {lb dest1 dest2} {
 	upvar $lb fieldname
 	set fieldname $dest1
+}
+
+# convenience function to link a "scale" widget with a "listbox" so that the scale becomes a scrollbar to the listbox, rather than using the ugly Tk native scrollbar
+proc scale_scroll_new {lb value dest1 dest2} {
+
+	return [scale_scroll $lb $dest1 $dest2]
+
+    #TODO: get a reference to the listbox somehow?
+
+    # get number of items visible in list box
+    set visible_items [lindex [split [$lb configure -height] " "] 4]
+    # get total items in listbox
+    set total_items [$lb size]
+    # if all the items fit on screen then there is nothing to do
+    if {$visible_items >= $total_items} {return}
+    # determine which item would be at the top if the last items is at the bottom
+    set last_top_item [expr $total_items - $visible_items]
+    # determine what percentage of the way down the current item is
+    set rescaled_value [expr $dest1 / $total_items * $visible_items]
+
+    upvar $value fieldname
+    set fieldname $rescaled_value
 }
 
 proc calibration_gui_init {} {
@@ -2482,7 +2570,7 @@ proc handle_keypress {keycode} {
 
 	} elseif {($::some_droid != 1 && $keycode == 102) || ($::some_droid == 1 && $keycode == 9)} {
 		# f = flush
-		start_hot_water_rinse
+		start_flush
 
 	} elseif {($::some_droid != 1 && $keycode == 115) || ($::some_droid == 1 && $keycode == 22)} {
 		# s = steam
