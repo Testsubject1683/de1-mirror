@@ -98,10 +98,8 @@ proc make_de1_dir {} {
 
     }
 
-        #fonts/NotoSansCJKjp-ThinSansCJKjp-DemiLight.otf *
-        #fonts/NotoSansCJKjp-Thin.otf *
-        #fonts/NotoSansCJKjp-Medium.otf *
-#        create_de1_icon.tcl *
+#            profiles/Best\ overall\ pressure\ profile.tcl *
+
 
     set files {
         binary.tcl *
@@ -114,6 +112,7 @@ proc make_de1_dir {} {
         utils.tcl *
         main.tcl *
         vars.tcl *
+        de1_comms.tcl *
         updater.tcl *
         misc.tcl *
         pkgIndex.tcl *
@@ -142,6 +141,8 @@ proc make_de1_dir {} {
         fonts/notosansuibold.ttf *
         fonts/notosansuiregular.ttf *
         fonts/sarabun.ttf *
+        fonts/hebrew-regular.ttf *
+        fonts/hebrew-bold.ttf *
         fonts/sarabunbold.ttf *
         fonts/Dubai-Bold.otf *
         fonts/Dubai-Regular.otf *
@@ -553,6 +554,12 @@ proc make_de1_dir {} {
         saver/2560x1600/rainbow_dj.jpg *     
 
         profiles/Gentle\ and\ sweet.tcl *
+        profiles/tea_portafilter.tcl *
+        profiles/test_leak.tcl *
+        profiles/test_temperature.tcl *
+        profiles/test_pressure_calibration.tcl *
+        profiles/test_temperature_calibration.tcl *
+        profiles/test_pressure_release.tcl *        
         profiles/Cremina.tcl *
         profiles/manual_flow.tcl *
         profiles/manual_pressure.tcl *
@@ -571,13 +578,11 @@ proc make_de1_dir {} {
         profiles/Hybrid\ pour\ over\ espresso.tcl *
         profiles/Low\ pressure\ lever\ machine\ at\ 6\ bar.tcl *
         profiles/Preinfuse\ then\ 45ml\ of\ water.tcl *
-        profiles/Best\ overall\ pressure\ profile.tcl *
         profiles/Traditional\ lever\ machine.tcl *
         profiles/Trendy\ 6\ bar\ low\ pressure\ shot.tcl *
         profiles/Two\ spring\ lever\ machine\ to\ 9\ bar.tcl *
         profiles/Innovative\ long\ preinfusion.tcl *
         profiles/default.tcl *
-        profiles/default_descending.tcl *        
         profiles/rao_allonge.tcl *
         profiles/e61\ classic\ at\ 9\ bar.tcl *
         profiles/e61\ rocketing\ up\ to\ 10\ bar.tcl *

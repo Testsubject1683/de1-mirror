@@ -18,6 +18,9 @@ proc setup_environment {} {
     global android
     global undroid
 
+    set ::globals(listbox_length_multiplier) 1
+    set ::globals(entry_length_multiplier) 1
+
     if {$android == 1 || $undroid == 1} {
         #package require BLT
         #namespace import blt::*
@@ -84,6 +87,7 @@ proc setup_environment {} {
 
             } elseif {$width == 1280} {
                 set screen_size_width 1280
+                set screen_size_height 800
                 if {$width >= 720} {
                     set screen_size_height 800
                 } else {
@@ -92,7 +96,7 @@ proc setup_environment {} {
             } else {
                 # unknown resolution type, go with smallest
                 set screen_size_width 1280
-                set screen_size_height 720
+                set screen_size_height 800
             }
 
             # only calculate the tablet's dimensions once, then save it in settings for a faster app startup
@@ -129,6 +133,12 @@ proc setup_environment {} {
         } elseif {[language] == "ar" || [language] == "arb"} {
             set helvetica_font [sdltk addfont "fonts/Dubai-Regular.otf"]
             set helvetica_bold_font [sdltk addfont "fonts/Dubai-Bold.otf"]
+            set global_font_name [lindex [sdltk addfont "fonts/NotoSansCJKjp-Regular.otf"] 0]
+        } elseif {[language] == "he" || [language] == "heb"} {
+            set ::globals(listbox_length_multiplier) 1.35
+            set ::globals(entry_length_multiplier) 0.86
+            set helvetica_font [sdltk addfont "fonts/hebrew-regular.ttf"]
+            set helvetica_bold_font [sdltk addfont "fonts/hebrew-bold.ttf"]
             set global_font_name [lindex [sdltk addfont "fonts/NotoSansCJKjp-Regular.otf"] 0]
         } elseif {[language] == "zh-hant" || [language] == "zh-hans" || [language] == "kr"} {
             set helvetica_font [lindex [sdltk addfont "fonts/NotoSansCJKjp-Regular.otf"] 0]
@@ -449,6 +459,7 @@ proc random_saver_file {} {
 
             foreach fn [glob -nocomplain "[saver_directory]/2560x1600/*.jpg"] {
                 borg spinner on
+                msg "random_saver_file image create photo saver -file $fn"
                 image create photo saver -file $fn
                 photoscale saver $rescale_images_y_ratio $rescale_images_x_ratio
 
@@ -481,14 +492,28 @@ proc tcl_introspection {} {
 
         append txt "Commands available: [llength [info commands]]\nInstructions run: [info cmdcount]\nGlobals: [llength [info globals]]\nProcs: [llength [info procs]]\nAfter commands: [llength [after info]]\n"
 
-        append txt "Images loaded: [llength [image names]]\n"
-
-        set cnt 0
-        foreach i [image names] {
-            #append txt "[incr cnt]. $i [image height $i]x[image width $i] in use:[image inuse $i]\n"
+        set show_after_command_detail 0
+        if {$show_after_command_detail == 1} {
+            set acnt 0
+            foreach a [after info] {
+                incr acnt
+                append txt "$acnt - " [after info $a]\n"
+            }
         }
 
-        #append txt \n
+        append txt "Canvas objects: [llength [.can find all]]\n"
+        append txt "Images loaded: [llength [image names]]\n"
+        append txt "BLE queue: [llength $::de1(cmdstack)]\n"
+
+        set show_image_detail 0
+        if {$show_image_detail == 1} {
+            set cnt 0
+            foreach i [image names] {
+                append txt "[incr cnt]. $i [image height $i]x[image width $i] in use:[image inuse $i]\n"
+            }
+            append txt \n
+        }
+
 
         set vs [vector names]
         append txt "Vectors: [llength $vs]"
@@ -524,10 +549,12 @@ proc tcl_introspection {} {
         }
         append txt "TOTAL global variable memory used: $total bytes\n\n"
 
+
         msg $txt
     }
 
     after [expr {60 * 60 * 1000}] tcl_introspection
+    #after [expr {1000}] tcl_introspection
 }
 
 proc random_splash_file {} {
@@ -550,6 +577,7 @@ proc random_splash_file {} {
 
             foreach fn [glob -nocomplain "[splash_directory]/2560x1600/*.jpg"] {
                 borg spinner on
+                msg "random_splash_file image create photo saver -file $fn"
                 image create photo saver -file $fn
                 photoscale saver $rescale_images_y_ratio $rescale_images_x_ratio
 
@@ -705,6 +733,13 @@ proc translate {english} {
                     # use the "arb" column on Android/Undroid because they do not correctly right-to-left text like OSX does
                     if {[ifexists available(arb)] != ""} {
                         return $available(arb)
+                    }
+                }
+
+                if {[language] == "he" && ($::android == 1 || $::undroid == 1)} {
+                    # use the "heb" column on Android/Undroid because they do not correctly right-to-left text like OSX does
+                    if {[ifexists available(heb)] != ""} {
+                        return $available(heb)
                     }
                 }
 
@@ -1135,13 +1170,12 @@ proc load_settings {} {
 
 
     blt::vector create espresso_elapsed god_espresso_elapsed god_espresso_pressure steam_pressure steam_temperature steam_flow steam_elapsed espresso_pressure espresso_flow god_espresso_flow espresso_flow_weight god_espresso_flow_weight espresso_flow_weight_2x god_espresso_flow_weight_2x espresso_flow_2x god_espresso_flow_2x espresso_flow_delta espresso_pressure_delta espresso_temperature_mix espresso_temperature_basket god_espresso_temperature_basket espresso_state_change espresso_pressure_goal espresso_flow_goal espresso_flow_goal_2x espresso_temperature_goal espresso_weight espresso_weight_chartable espresso_resistance_weight espresso_resistance
-    blt::vector create espresso_de1_explanation_chart_pressure espresso_de1_explanation_chart_flow espresso_de1_explanation_chart_elapsed espresso_de1_explanation_chart_elapsed_flow espresso_water_dispensed espresso_flow_weight_raw
+    blt::vector create espresso_de1_explanation_chart_pressure espresso_de1_explanation_chart_flow espresso_de1_explanation_chart_elapsed espresso_de1_explanation_chart_elapsed_flow espresso_water_dispensed espresso_flow_weight_raw espresso_de1_explanation_chart_temperature  espresso_de1_explanation_chart_temperature_10 espresso_de1_explanation_chart_selected_step
     blt::vector create espresso_de1_explanation_chart_flow_1 espresso_de1_explanation_chart_elapsed_flow_1 espresso_de1_explanation_chart_flow_2 espresso_de1_explanation_chart_elapsed_flow_2 espresso_de1_explanation_chart_flow_3 espresso_de1_explanation_chart_elapsed_flow_3
     blt::vector create espresso_de1_explanation_chart_elapsed_1 espresso_de1_explanation_chart_elapsed_2 espresso_de1_explanation_chart_elapsed_3 espresso_de1_explanation_chart_pressure_1 espresso_de1_explanation_chart_pressure_2 espresso_de1_explanation_chart_pressure_3
 
     # zoomed flow goal 2x
     blt::vector create espresso_de1_explanation_chart_flow_2x espresso_de1_explanation_chart_flow_1_2x espresso_de1_explanation_chart_flow_2_2x espresso_de1_explanation_chart_flow_3_2x
-
 
     # experimental chargts showing flow from the top, or 2x normal size
     blt::vector espresso_flow_delta_negative espresso_flow_delta_negative_2x
@@ -1524,13 +1558,13 @@ proc shot_history_count_profile_use {} {
 proc shot_history_export {} {
 
     # optionally disable this feature
-    if {$::settings(export_history_automatically_to_csv) != "1"} {    
+    if {$::settings(enable_shot_history_export) != "1"} {    
         return
     }
 
     set dirs [lsort -dictionary [glob -nocomplain -tails -directory "[homedir]/history/" *.shot]]
     set dd {}
-    #puts -nonewline "Exporting"
+
     foreach d $dirs {
         set tailname [file tail $d]
         set newfile [file rootname $tailname]
@@ -1547,9 +1581,28 @@ proc shot_history_export {} {
             msg "Exporting history item: $fname"
             export_csv arr $fname
         }
-        #puts "keys: [array names arr]"
+
+        set enable_json_export_history 0
+        if {$enable_json_export_history == 1} {
+            set jsonfname "history/$newfile.json" 
+            if {[file exists $jsonfname] != 1} {
+                array unset -nocomplain arr
+                set ftxt ""
+                catch {
+                    set ftxt [read_file "history/$d"]
+                    array set arr $ftxt
+
+                }
+                if {[array size arr] == 0} {
+                    msg "Corrupted shot history item: 'history/$d'"
+                    continue
+                }
+                msg "Exporting history item to JSON: $jsonfname"
+                export_json $ftxt $jsonfname
+            }
+        }
     }
-    #puts "done"
+
     return [lsort -dictionary -increasing $dd]
 
 }
@@ -1584,6 +1637,26 @@ proc export_csv {arrname fn} {
 
 }
 
+
+proc dict2json {dictToEncode} {
+    ::json::write object {*}[dict map {k v} $dictToEncode {
+        set v [::json::write string $v]
+    }]
+}
+
+# Export one shot from memory, to a file
+proc export_json {ftxt fn} {
+    package require json::write
+
+    set d [dict create]
+    foreach {k v} $ftxt {
+        dict set d $k $v
+    }
+    set v [dict2json $d]
+
+    puts -nonewline "."
+    write_file "$fn" $v
+}
 # Export one shot from memory, to an EEX format file
 proc export_csv_common_format {arrname fn} {
     upvar $arrname arr

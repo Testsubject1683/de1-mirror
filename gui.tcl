@@ -148,7 +148,7 @@ proc add_de1_page {names filename {skin ""} } {
 	} else {
 		if {$::settings(preload_all_page_images) == 1} {
 			set iname [image create photo $names -file $pngfilename]
-			puts "loading page: '$names' with image '$pngfilename' with tclname: '$iname'"
+			msg "loading page: '$names' with image '$pngfilename' with tclname: '$iname'"
 			#image create photo $names 			$names -file $pngfilename
 		}
 	}
@@ -168,6 +168,8 @@ proc add_de1_page {names filename {skin ""} } {
 }	
 
 proc set_de1_screen_saver_directory {{dirname {}}} {
+
+	msg "set_de1_screen_saver_directory"
 
 	# force use of our default saver directory if the black screen saver is enabled, otherwise use whatever the skin chooses
 	if {$::settings(black_screen_saver) == 1} {
@@ -406,6 +408,8 @@ proc canvas'textvar {canvas tag _var args} {
 
 # optional "alsobind" allows us to put text on top of a pressable button and have the text also bound to the same down/up/leave actions
 proc up_down_button_create {actionscript btn_images img_loc key_loc buttontype {alsobind {}} } {
+
+	msg "up_down_button_create"
 
 	if {$buttontype != "onetime" && $buttontype != "holdrepeats"} {
 		puts "ERROR unknown buttontype $buttontype"
@@ -776,6 +780,8 @@ proc add_de1_text {args} {
 
 set image_cnt 0
 proc add_de1_image {args} {
+
+	msg "add_de1_image $args"
 	global image_cnt
 	incr image_cnt
 	set contexts [lindex $args 0]
@@ -967,21 +973,29 @@ proc change_screen_saver_img {} {
 
 	#msg "change_screen_saver_img $::de1(current_context) '[page_displaying_now]'"
 	#if {$::de1(current_context) == "saver"} {
-		catch {
-			image delete saver
-		}
+		#catch {
+			# image delete is not needed, as Tk silently replaces the existing image if the object has the same name
+			#image delete saver
+		#}
 
 		set fn [random_saver_file]
 
 		set err ""
-		catch {
+		set errcode [catch {
 			# this can happen during an upgrade
+			#msg "image create photo saver -file $fn"
 			image create photo saver -file $fn
-			.can create image {0 0} -anchor nw -image saver  -tag saver -state hidden
-			.can lower saver
-		} err
+			
+			# BUG FIX: this was causing a new canvas item to be created each time a screen saver object was created
+			# switching to itemconfigure instead
+			# .can create image {0 0} -anchor nw -image saver  -tag saver -state hidden
 
-		if {$err != ""} {
+			#.can itemconfigure -anchor nw -image saver  -tag saver -state hidden
+			#.can lower saver
+		} err]
+
+		if {$errcode != 0} {
+
 			error $err
 		}
 		#update
@@ -992,8 +1006,9 @@ proc change_screen_saver_img {} {
 		unset -nocomplain ::change_screen_saver_image_handle
 	}
 
-	#set ::change_screen_saver_image_handle [after 1000 change_screen_saver_image]
 	set ::change_screen_saver_image_handle [after [expr {60 * 1000 * $::settings(screen_saver_change_interval)}] change_screen_saver_img]
+	#set ::change_screen_saver_image_handle [after 1 change_screen_saver_img]
+	#set ::change_screen_saver_image_handle [after 100 change_screen_saver_img]
 }
 
 proc update_chart {} {
@@ -1362,6 +1377,7 @@ proc page_display_change {page_to_hide page_to_show} {
 		set errcode [catch {
 			# this can happen if the image file has been moved/deleted underneath the app
 			#fallback is to at least not crash
+			msg "page_display_change image create photo $page_to_show -file $pngfilename" 
 			image create photo $page_to_show -file $pngfilename
 			#msg "image create photo $page_to_show -file $pngfilename"
 		}]
@@ -1447,7 +1463,7 @@ proc page_display_change {page_to_hide page_to_show} {
 
 	update_onscreen_variables
 	#after 100 update_chart
-	after 1000 update
+	#after 1000 update
 
 }
 
@@ -1471,6 +1487,9 @@ proc update_de1_explanation_chart { {context {}} } {
 	#puts "update_de1_explanation_chart 1: $::settings(settings_profile_type)"
 
 	espresso_de1_explanation_chart_elapsed length 0
+	espresso_de1_explanation_chart_temperature length 0
+	espresso_de1_explanation_chart_temperature_10 length 0
+	espresso_de1_explanation_chart_selected_step length 0
 
 	espresso_de1_explanation_chart_pressure length 0
 	espresso_de1_explanation_chart_pressure_1 length 0
@@ -1495,6 +1514,12 @@ proc update_de1_explanation_chart { {context {}} } {
 	espresso_de1_explanation_chart_flow_2_2x length 0
 	espresso_de1_explanation_chart_flow_3_2x length 0
 
+	if {[ifexists ::settings(espresso_temperature_steps_enabled)] != 1} {
+		set ::settings(espresso_temperature_0) $::settings(espresso_temperature)
+		set ::settings(espresso_temperature_1) $::settings(espresso_temperature)
+		set ::settings(espresso_temperature_2) $::settings(espresso_temperature)
+		set ::settings(espresso_temperature_3) $::settings(espresso_temperature)
+	}
 
 	clear_espresso_chart
 
@@ -1504,6 +1529,7 @@ proc update_de1_explanation_chart { {context {}} } {
 		return
 	} elseif {$::settings(settings_profile_type) == "settings_2c" || $::settings(settings_profile_type) == "settings_2c2"} {
 		# advanced shots currently get no graphic preview
+		update_de1_plus_advanced_explanation_chart
 		return
 	}
 
@@ -1518,6 +1544,8 @@ proc update_de1_explanation_chart { {context {}} } {
 
 	set seconds 0
 
+	#set temperature 90
+
 	# preinfusion
 	set preinfusion_pressure 0.5
 	if {$::settings(preinfusion_time) > 0} {
@@ -1529,20 +1557,34 @@ proc update_de1_explanation_chart { {context {}} } {
 		espresso_de1_explanation_chart_pressure append 0.1
 		espresso_de1_explanation_chart_elapsed append $seconds
 
+		espresso_de1_explanation_chart_temperature append $::settings(espresso_temperature_0) 
+		espresso_de1_explanation_chart_temperature_10 append [expr {$::settings(espresso_temperature_0) / 10.0}]
+
+
 		set seconds [expr {-.01  + $seconds + $::settings(preinfusion_time)}]
 		espresso_de1_explanation_chart_pressure append $preinfusion_pressure
 		espresso_de1_explanation_chart_elapsed append $seconds
+
+		espresso_de1_explanation_chart_temperature append $::settings(espresso_temperature_1) 
+		espresso_de1_explanation_chart_temperature_10 append [expr {$::settings(espresso_temperature_1) / 10.0}]
 
 		# these 0.01 add/remove is to force the chart library to put two dots in to keep the curves all moving the same way
 		set seconds [expr {.01  + $seconds}]
 		espresso_de1_explanation_chart_pressure append $preinfusion_pressure
 		espresso_de1_explanation_chart_elapsed append $seconds
+
+		espresso_de1_explanation_chart_temperature append $::settings(espresso_temperature_1) 
+		espresso_de1_explanation_chart_temperature_10 append [expr {$::settings(espresso_temperature_1) / 10.0}]
+
 	} else {
 		espresso_de1_explanation_chart_elapsed append $seconds
 		espresso_de1_explanation_chart_pressure append 0
-		#set ::settings(preinfusion_stop_pressure) 4
 
+		espresso_de1_explanation_chart_temperature append $::settings(espresso_temperature_0)
+		espresso_de1_explanation_chart_temperature_10 append [expr {$::settings(espresso_temperature_0) / 10.0}]
 	}
+
+
 
 	# color coding the preinfusion section
 	espresso_de1_explanation_chart_pressure_1 append espresso_de1_explanation_chart_pressure
@@ -1592,6 +1634,10 @@ proc update_de1_explanation_chart { {context {}} } {
 	espresso_de1_explanation_chart_elapsed append $seconds
 	espresso_de1_explanation_chart_pressure append $espresso_pressure
 
+	espresso_de1_explanation_chart_temperature append $::settings(espresso_temperature_2)
+	espresso_de1_explanation_chart_temperature_10 append [expr {$::settings(espresso_temperature_2) / 10.0}]
+
+
 	espresso_de1_explanation_chart_elapsed_2 append $seconds
 	espresso_de1_explanation_chart_pressure_2 append $espresso_pressure
 	espresso_de1_explanation_chart_elapsed_3 append $seconds
@@ -1602,6 +1648,9 @@ proc update_de1_explanation_chart { {context {}} } {
 		set seconds [expr {$seconds + $pressure_hold_time}]
 		espresso_de1_explanation_chart_pressure append $espresso_pressure
 		espresso_de1_explanation_chart_elapsed append $seconds
+
+		espresso_de1_explanation_chart_temperature append $::settings(espresso_temperature_2)
+		espresso_de1_explanation_chart_temperature_10 append [expr {$::settings(espresso_temperature_2) / 10.0}]
 
 		espresso_de1_explanation_chart_pressure_2 append $espresso_pressure
 		espresso_de1_explanation_chart_elapsed_2 append $seconds
@@ -1614,6 +1663,9 @@ proc update_de1_explanation_chart { {context {}} } {
 		set seconds [expr {$seconds + $espresso_decline_time}]
 		espresso_de1_explanation_chart_pressure append $pressure_end
 		espresso_de1_explanation_chart_elapsed append $seconds
+
+		espresso_de1_explanation_chart_temperature append $::settings(espresso_temperature_3)
+		espresso_de1_explanation_chart_temperature_10 append [expr {$::settings(espresso_temperature_3) / 10.0}]
 
 		espresso_de1_explanation_chart_pressure_3 append $pressure_end
 		espresso_de1_explanation_chart_elapsed_3 append $seconds
@@ -1644,6 +1696,9 @@ proc update_de1_plus_flow_explanation_chart { {context {}} } {
 		espresso_de1_explanation_chart_flow append 0
 		espresso_de1_explanation_chart_elapsed_flow append $seconds
 
+		espresso_de1_explanation_chart_temperature append $::settings(espresso_temperature_0) 
+		espresso_de1_explanation_chart_temperature_10 append [expr {$::settings(espresso_temperature_0) / 10.0}]
+
 		#espresso_de1_explanation_chart_elapsed_flow_1 append $seconds
 
 
@@ -1653,6 +1708,10 @@ proc update_de1_plus_flow_explanation_chart { {context {}} } {
 		espresso_de1_explanation_chart_flow append $::settings(preinfusion_flow_rate);
 		espresso_de1_explanation_chart_elapsed_flow append $seconds
 
+		espresso_de1_explanation_chart_temperature append $::settings(espresso_temperature_0) 
+		espresso_de1_explanation_chart_temperature_10 append [expr {$::settings(espresso_temperature_0) / 10.0}]
+
+
 		set likely_pressure_attained_during_preinfusion [expr {(($::settings(preinfusion_flow_rate) * $::settings(preinfusion_time)) - 5) / 10}]
 		set pressure_gained_needed [expr {$::settings(preinfusion_stop_pressure) - $likely_pressure_attained_during_preinfusion}]
 
@@ -1660,8 +1719,10 @@ proc update_de1_plus_flow_explanation_chart { {context {}} } {
 		espresso_de1_explanation_chart_flow append $::settings(preinfusion_flow_rate);
 		espresso_de1_explanation_chart_elapsed_flow append $seconds
 
-#puts "g: $::settings(preinfusion_guarantee)"
-		#puts "likely_pressure_attained_during_preinfusion: $likely_pressure_attained_during_preinfusion / $::settings(preinfusion_guarantee) / pressure_gained_needed $pressure_gained_needed"
+		espresso_de1_explanation_chart_temperature append $::settings(espresso_temperature_1) 
+		espresso_de1_explanation_chart_temperature_10 append [expr {$::settings(espresso_temperature_1) / 10.0}]
+
+
 		if {$::settings(preinfusion_guarantee) != 0} {
 			# assume 2 bar per second rise time, and a flow rate of 6 ml/s when rising
 			set time_to_rise_pressure [expr {$pressure_gained_needed / 2}]
@@ -1669,11 +1730,13 @@ proc update_de1_plus_flow_explanation_chart { {context {}} } {
 				set time_to_rise_pressure 1
 			}
 
-			#puts "time_to_rise_pressure: $time_to_rise_pressure"
-			#set rise_hold_time [expr {($::settings(espresso_pressure) - $likely_pressure_attained_during_preinfusion) }]
 			set seconds [expr {$seconds + $time_to_rise_pressure}]
 			espresso_de1_explanation_chart_flow append 6
 			espresso_de1_explanation_chart_elapsed_flow append $seconds
+
+			espresso_de1_explanation_chart_temperature append $::settings(espresso_temperature_1) 
+			espresso_de1_explanation_chart_temperature_10 append [expr {$::settings(espresso_temperature_1) / 10.0}]
+
 
 			if {$::settings(flow_profile_hold) > 0} {
 				set pressure_drop_needed [expr {6 - $::settings(flow_profile_hold)}]
@@ -1683,14 +1746,19 @@ proc update_de1_plus_flow_explanation_chart { {context {}} } {
 			set seconds [expr {$seconds + (($pressure_drop_needed + $time_to_rise_pressure) / 2)}]
 			espresso_de1_explanation_chart_flow append 6
 			espresso_de1_explanation_chart_elapsed_flow append $seconds
+
+			espresso_de1_explanation_chart_temperature append $::settings(espresso_temperature_1) 
+			espresso_de1_explanation_chart_temperature_10 append [expr {$::settings(espresso_temperature_1) / 10.0}]
+
 		}
 	} else {
 		set seconds [expr {$::settings(flow_profile_hold)/4}]
 		espresso_de1_explanation_chart_flow append 0
 		espresso_de1_explanation_chart_elapsed_flow append $seconds
 
-	#espresso_de1_explanation_chart_elapsed_flow append $seconds
-		#espresso_de1_explanation_chart_flow append 0
+		espresso_de1_explanation_chart_temperature append $::settings(espresso_temperature_0) 
+		espresso_de1_explanation_chart_temperature_10 append [expr {$::settings(espresso_temperature_0) / 10.0}]
+
 	}
 
 	# color coding the preinfusion section
@@ -1701,22 +1769,9 @@ proc update_de1_plus_flow_explanation_chart { {context {}} } {
 	espresso_de1_explanation_chart_flow_3 append espresso_de1_explanation_chart_flow
 	espresso_de1_explanation_chart_elapsed_flow_3 append espresso_de1_explanation_chart_elapsed_flow
 
-		#espresso_de1_explanation_chart_flow append 0
-		#espresso_de1_explanation_chart_elapsed_flow append $seconds
-
-
-
 	set approximate_ramptime 3
 	set flow_profile_hold_time $::settings(espresso_hold_time)
 	set espresso_decline_time $::settings(espresso_decline_time)
-		#set flow_profile_hold_time [expr {$flow_profile_hold_time - $approximate_ramptime}]
-		#puts "flow_profile_hold_time: $flow_profile_hold_time"
-	#if {$flow_profile_hold_time > $approximate_ramptime} {
-	#	puts "113"
-	#} else {
-	#	puts "114"
-#		set approximate_ramptime 5
-	#}	
 
 	set flow_profile_hold $::settings(flow_profile_hold)
 	if {$flow_profile_hold == 0} {
@@ -1737,6 +1792,10 @@ proc update_de1_plus_flow_explanation_chart { {context {}} } {
 		set seconds [expr {$seconds + $approximate_ramptime}]
 		espresso_de1_explanation_chart_elapsed_flow append $seconds
 		espresso_de1_explanation_chart_flow append $flow_profile_hold
+
+		espresso_de1_explanation_chart_temperature append $::settings(espresso_temperature_2) 
+		espresso_de1_explanation_chart_temperature_10 append [expr {$::settings(espresso_temperature_2) / 10.0}]
+
 		
 		espresso_de1_explanation_chart_elapsed_flow_2 append $seconds
 		espresso_de1_explanation_chart_flow_2 append $flow_profile_hold
@@ -1747,6 +1806,10 @@ proc update_de1_plus_flow_explanation_chart { {context {}} } {
 		set seconds [expr {$seconds + $flow_profile_hold_time}]
 		espresso_de1_explanation_chart_flow append $flow_profile_hold
 		espresso_de1_explanation_chart_elapsed_flow append $seconds
+
+		espresso_de1_explanation_chart_temperature append $::settings(espresso_temperature_2) 
+		espresso_de1_explanation_chart_temperature_10 append [expr {$::settings(espresso_temperature_2) / 10.0}]
+
 		
 		espresso_de1_explanation_chart_flow_2 append $flow_profile_hold
 		espresso_de1_explanation_chart_elapsed_flow_2 append $seconds
@@ -1760,7 +1823,9 @@ proc update_de1_plus_flow_explanation_chart { {context {}} } {
 		set seconds [expr {$seconds + $espresso_decline_time}]
 		espresso_de1_explanation_chart_flow append $flow_profile_decline
 		espresso_de1_explanation_chart_elapsed_flow append $seconds
-		
+
+		espresso_de1_explanation_chart_temperature append $::settings(espresso_temperature_3) 
+		espresso_de1_explanation_chart_temperature_10 append [expr {$::settings(espresso_temperature_3) / 10.0}]		
 
 		espresso_de1_explanation_chart_flow_3 append $flow_profile_decline
 		espresso_de1_explanation_chart_elapsed_flow_3 append $seconds
@@ -1789,14 +1854,161 @@ proc update_de1_plus_flow_explanation_chart { {context {}} } {
 	set ::settings(espresso_max_time) $seconds
 }
 
+proc update_de1_plus_advanced_explanation_chart { {context {}} } {
+
+	set seconds 0
+	espresso_de1_explanation_chart_pressure append 0
+	espresso_de1_explanation_chart_flow append 0
+	espresso_de1_explanation_chart_elapsed append 0
+	espresso_de1_explanation_chart_elapsed_flow append 0
+	espresso_de1_explanation_chart_selected_step append -1
+	
+	# first step temp
+	array set props [lindex $::settings(advanced_shot) 0]
+	espresso_de1_explanation_chart_temperature append [ifexists props(temperature)]
+	espresso_de1_explanation_chart_temperature_10 append [expr {[ifexists props(temperature)] / 10.0}]
+
+	set cnt 0
+	set previous_pump ""
+	set previous_flow 0
+	set previous_pressure 0
+	set selected_step_value -100
+
+	foreach step $::settings(advanced_shot) {
+		incr cnt
+		unset -nocomplain props
+		array set props $step
+
+		unset -nocomplain nextprops
+		array set nextprops [lindex $::settings(advanced_shot) $cnt]
+
+		set pump [ifexists props(pump)]
+
+		#puts "$cnt [array get props]\n"
+
+		set theseconds [ifexists props(seconds)]
+		set transition [ifexists props(transition)]
+
+
+		if {[expr {$cnt - 1}] == [ifexists ::current_step_number]} {
+			set selected_step_value [expr {-1 * $selected_step_value}]
+		}
+
+		if {$pump == "pressure"} {
+			#puts "pressure [ifexists props(pressure)] $seconds"
+
+			if {$previous_pump == "flow"} {
+				espresso_de1_explanation_chart_pressure append [ifexists props(pressure)]
+				espresso_de1_explanation_chart_flow append -1
+				espresso_de1_explanation_chart_elapsed append $seconds		
+				espresso_de1_explanation_chart_elapsed_flow append $seconds		
+
+				espresso_de1_explanation_chart_temperature append [ifexists props(temperature)]
+				espresso_de1_explanation_chart_temperature_10 append [expr {[ifexists props(temperature)] / 10.0}]
+				espresso_de1_explanation_chart_selected_step append $selected_step_value
+
+			}
+
+			if {$transition == "fast"} {
+				espresso_de1_explanation_chart_pressure append [ifexists props(pressure)]
+				espresso_de1_explanation_chart_flow append -1
+				espresso_de1_explanation_chart_elapsed append $seconds		
+				espresso_de1_explanation_chart_elapsed_flow append $seconds		
+
+				espresso_de1_explanation_chart_temperature append [ifexists props(temperature)]
+				espresso_de1_explanation_chart_temperature_10 append [expr {[ifexists props(temperature)] / 10.0}]
+				espresso_de1_explanation_chart_selected_step append $selected_step_value
+			} else {
+				espresso_de1_explanation_chart_pressure append $previous_pressure
+				espresso_de1_explanation_chart_flow append -1
+				espresso_de1_explanation_chart_elapsed append $seconds		
+				espresso_de1_explanation_chart_elapsed_flow append $seconds		
+
+				espresso_de1_explanation_chart_temperature append [ifexists props(temperature)]
+				espresso_de1_explanation_chart_temperature_10 append [expr {[ifexists props(temperature)] / 10.0}]
+				espresso_de1_explanation_chart_selected_step append $selected_step_value
+			}
+
+
+			set seconds [expr {$seconds + $theseconds}]
+
+			espresso_de1_explanation_chart_pressure append [ifexists props(pressure)]
+			espresso_de1_explanation_chart_flow append -1
+			espresso_de1_explanation_chart_elapsed append $seconds		
+			espresso_de1_explanation_chart_elapsed_flow append $seconds		
+
+			espresso_de1_explanation_chart_temperature append [ifexists props(temperature)]
+			espresso_de1_explanation_chart_temperature_10 append [expr {[ifexists props(temperature)] / 10.0}]
+			espresso_de1_explanation_chart_selected_step append $selected_step_value
+
+
+
+		} elseif {$pump == "flow"} {
+			#puts "flow [ifexists props(flow)] $seconds"
+
+			if {$previous_pump == "pressure"} {
+				espresso_de1_explanation_chart_flow append [ifexists props(flow)]
+				espresso_de1_explanation_chart_pressure append -1
+				espresso_de1_explanation_chart_elapsed append $seconds		
+				espresso_de1_explanation_chart_elapsed_flow append $seconds		
+
+				espresso_de1_explanation_chart_temperature append [ifexists props(temperature)]
+				espresso_de1_explanation_chart_temperature_10 append [expr {[ifexists props(temperature)] / 10.0}]
+				espresso_de1_explanation_chart_selected_step append $selected_step_value
+
+			}
+
+			if {$transition == "fast"} {
+				espresso_de1_explanation_chart_flow append [ifexists props(flow)]
+				espresso_de1_explanation_chart_pressure append -1
+				espresso_de1_explanation_chart_elapsed append $seconds		
+				espresso_de1_explanation_chart_elapsed_flow append $seconds		
+
+				espresso_de1_explanation_chart_temperature append [ifexists props(temperature)]
+				espresso_de1_explanation_chart_temperature_10 append [expr {[ifexists props(temperature)] / 10.0}]
+				espresso_de1_explanation_chart_selected_step append $selected_step_value
+
+			}  else {
+				espresso_de1_explanation_chart_flow append $previous_flow
+				espresso_de1_explanation_chart_pressure append -1
+				espresso_de1_explanation_chart_elapsed append $seconds		
+				espresso_de1_explanation_chart_elapsed_flow append $seconds		
+
+				espresso_de1_explanation_chart_temperature append [ifexists props(temperature)]
+				espresso_de1_explanation_chart_temperature_10 append [expr {[ifexists props(temperature)] / 10.0}]
+				espresso_de1_explanation_chart_selected_step append $selected_step_value
+			}
+
+			set seconds [expr {$seconds + $theseconds}]
+
+			espresso_de1_explanation_chart_flow append [ifexists props(flow)]
+			espresso_de1_explanation_chart_pressure append -1
+			espresso_de1_explanation_chart_elapsed append $seconds		
+			espresso_de1_explanation_chart_elapsed_flow append $seconds		
+
+			espresso_de1_explanation_chart_temperature append [ifexists props(temperature)]
+			espresso_de1_explanation_chart_temperature_10 append [expr {[ifexists props(temperature)] / 10.0}]
+			espresso_de1_explanation_chart_selected_step append $selected_step_value
+
+		}
+
+		set previous_pump $pump
+		set previous_flow [ifexists props(flow)]
+		set previous_pressure [ifexists props(pressure)]
+	}
+
+	# save the total time
+	set ::settings(espresso_max_time) $seconds
+}
+
 
 proc setup_images_for_first_page {} {
 	
+	msg "setup_images_for_first_page"
 	set fn [random_splash_file]
 	image create photo splash -file $fn 
-	.can create image {0 0} -anchor nw -image splash  -tag splash -state normal
+	.can create image {0 0} -anchor nw -image splash -tag splash -state normal
 	pack .can
-
 	update
 	return
 }
@@ -1806,14 +2018,18 @@ proc run_de1_app {} {
 }
 
 proc ui_startup {} {
-	puts "setup_environment"
-
 
 	load_settings
 	setup_environment
 	bluetooth_connect_to_devices
-	shot_history_export
-	shot_history_count_profile_use
+	
+	if {[ifexists ::settings(enable_shot_history_export)] == "1"} {
+		shot_history_export
+	}
+
+	if {[ifexists ::settings(mark_most_popular_profiles_used)] == "1"} {
+		shot_history_count_profile_use
+	}
 	#ble_find_de1s
 	
 	setup_images_for_first_page
@@ -1827,8 +2043,7 @@ proc ui_startup {} {
 
 	check_if_battery_low_and_give_message
 
-	# check for app updates, a half day after startup, and then every 24h thereafter
-	#after 43200000 scheduled_app_update_check
+	# check for app updates, some time after startup, and then every 24h thereafter
 	after 3000 scheduled_app_update_check
 	tcl_introspection
 

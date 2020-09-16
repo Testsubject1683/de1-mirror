@@ -284,7 +284,8 @@ proc pause {time} {
 
 
 proc log_to_debug_file {text} {
-    if {[ifexists ::settings(logfile)] != ""} {
+
+    if {[ifexists ::settings(log_enabled)] == "1" && [ifexists ::settings(logfile)] != ""} {
         if {[ifexists ::logfile_handle] == "0"} {
             # do nothing, no logging is possible (such as OSX readonly file system)
             return
@@ -295,10 +296,14 @@ proc log_to_debug_file {text} {
             set ::logfile_handle "0"
             catch {
                 set ::logfile_handle [open "[homedir]/$::settings(logfile)" w]
-                fconfigure $::logfile_handle -blocking 0 -buffering line
-                #fconfigure $::logfile_handle 
-                #fconfigure $::logfile_handle -buffersize 10240
-                #fconfigure $::logfile_handle -buffersize 0
+
+                
+                if {[ifexists ::settings(log_fast)] == "1"} {
+                    msg "fast log file"
+                    fconfigure $::logfile_handle -blocking 0 -buffering line 
+                } else {
+                    fconfigure $::logfile_handle -buffersize 102400 -blocking 0 
+                }
             }
         } 
 
@@ -337,6 +342,7 @@ proc verify_decent_tls_certificate {} {
 proc close_log_file {} {
     if {[ifexists ::logfile_handle] != ""} {
         catch {
+            puts $::logfile_handle "$::debugcnt. ([clock format [clock seconds] -format "%Y-%m-%d %H:%M:%S" ]) closing log file"
             close $::logfile_handle
             undef -nocomplain ::logfile_handle
         }
@@ -500,7 +506,9 @@ proc start_app_update {} {
         foreach {filename filesize filemtime filesha} $remote_manifest {}
     }]
     if {$errcode != 0 || $remote_manifest == "" || $remote_manifest_gunzip_parts_length != 0} {
-        msg "Corrupt manifest: '[string range $remote_manifest 0 500]'"
+        catch {
+            msg "Corrupt manifest: '[string range $remote_manifest 0 500]'"
+        }
         set ::de1(app_update_button_label) [translate "Update failed"]; 
 
         catch {

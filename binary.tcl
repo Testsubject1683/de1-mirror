@@ -192,7 +192,17 @@ proc return_de1_packed_steam_hotwater_settings {} {
 	set arr(TargetSteamTemp) [convert_float_to_U8P0 $steam_temperature]
 	set arr(TargetSteamLength) [convert_float_to_U8P0 $::settings(steam_timeout)]
 	set arr(TargetHotWaterTemp) [convert_float_to_U8P0 $::settings(water_temperature)]
-	set arr(TargetHotWaterVol) [convert_float_to_U8P0 $::settings(water_volume)]
+	
+	if {$::de1(scale_device_handle) != 0} {
+		# "hot water: stop on weight" feature. Works with the scale, so it's more accurate.
+		# we ask for more water than we need, so that we can definitely get enough
+		# to stop on weight.
+		set arr(TargetHotWaterVol) [convert_float_to_U8P0 [expr { 2 * $::settings(water_volume)}] ]
+		#set arr(TargetHotWaterVol) [convert_float_to_U8P0 $::settings(water_volume)]
+	} else {
+		set arr(TargetHotWaterVol) [convert_float_to_U8P0 $::settings(water_volume)]
+	}
+
 	set arr(TargetHotWaterLength) [convert_float_to_U8P0 $::settings(water_time_max)]
 	set arr(TargetEspressoVol) [convert_float_to_U8P0 $::settings(espresso_typical_volume)]
 	set arr(TargetGroupTemp) [convert_float_to_U16P8 $::settings(espresso_temperature)]
@@ -1198,7 +1208,7 @@ proc parse_binary_water_level {packed destarrname} {
 }
 
 
-proc parse_binary_mmr_read {packed destarrname} {
+proc parse_binary_mmr_read_obs {packed destarrname} {
 	upvar $destarrname mmrdata
 	unset -nocomplain mmrdata
 
@@ -1849,7 +1859,7 @@ proc parse_state_change {packed destarrname} {
 proc update_de1_state {statechar} {
 	#::fields::unpack $statechar $spec msg bigeendian
 	parse_state_change $statechar msg
-	set textstate [ifexists ::de1_num_state($msg(state))]
+	set textstate [ifexists ::de1_num_state([ifexists msg(state)])]
 
 	#msg "update_de1_state '[ifexists ::previous_textstate]' '$textstate'"
 
